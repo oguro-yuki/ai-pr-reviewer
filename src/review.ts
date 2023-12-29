@@ -429,6 +429,7 @@ ${filename}: ${summary}
     } else {
       let message = '### Summary by CodeRabbit\n\n'
       message += releaseNotesResponse
+      info(`Summary: ${message}`)
       try {
         await commenter.updateDescription(
           context.payload.pull_request.number,
