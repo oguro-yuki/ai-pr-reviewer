@@ -618,7 +618,7 @@ ${commentChain}
           const [response] = await heavyBot.chat(
             prompts.renderReviewFileDiff(ins)
           )
-          if (response === '') {
+          if (!response) {
             info('review: nothing obtained from openai')
             reviewsFailed.push(`${filename} (no response)`)
             return

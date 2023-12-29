@@ -60,11 +60,15 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
   }
 
   chat = async (message: string): Promise<string> => {
+    info(`message: ${message}`)
     let res: string = ''
     try {
       res = await this.chat_(message)
       return res
     } catch (e: unknown) {
+      warning(
+          `Failed to review: ${e as string}, skipping.`
+      )
       return res
     }
   }
