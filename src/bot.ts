@@ -36,13 +36,16 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         ['human', '{input}']
       ])
 
+      info(`azureOpenAIApiInstanceName: ${process.env.AZURE_OPENAI_API_INSTANCE_NAME}`)
+      info(`azureOpenAIApiDeploymentName: ${process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME}`)
+      info(`azureOpenAIApiKey: ${process.env.OPENAI_API_KEY}`)
+
       this.model = new ChatOpenAI({
         temperature: options.openaiModelTemperature,
         azureOpenAIApiKey: process.env.OPENAI_API_KEY,
         azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
         azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
-        azureOpenAIApiDeploymentName:
-        process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+        azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
         timeout: this.options.openaiTimeoutMS,
         maxRetries: this.options.openaiRetries
       })
@@ -60,7 +63,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
   }
 
   chat = async (message: string): Promise<string> => {
-    info(`message: ${message}`)
     let res: string = ''
     try {
       res = await this.chat_(message)
@@ -75,7 +77,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
 
   private readonly chat_ = async (message: string): Promise<string> => {
     // record timing
-    info(`message: ${message}`)
     const start = Date.now()
     if (!message) {
       return ''

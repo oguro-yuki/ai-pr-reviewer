@@ -16812,6 +16812,9 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
                 new prompts/* MessagesPlaceholder */.ax('history'),
                 ['human', '{input}']
             ]);
+            (0,core.info)(`azureOpenAIApiInstanceName: ${process.env.AZURE_OPENAI_API_INSTANCE_NAME}`);
+            (0,core.info)(`azureOpenAIApiDeploymentName: ${process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME}`);
+            (0,core.info)(`azureOpenAIApiKey: ${process.env.OPENAI_API_KEY}`);
             this.model = new openai_ChatOpenAI({
                 temperature: options.openaiModelTemperature,
                 azureOpenAIApiKey: process.env.OPENAI_API_KEY,
@@ -16833,7 +16836,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         }
     }
     chat = async (message) => {
-        (0,core.info)(`message: ${message}`);
         let res = '';
         try {
             res = await this.chat_(message);
@@ -16846,7 +16848,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     };
     chat_ = async (message) => {
         // record timing
-        (0,core.info)(`message: ${message}`);
         const start = Date.now();
         if (!message) {
             return '';
