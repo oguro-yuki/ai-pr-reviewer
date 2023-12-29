@@ -2,11 +2,11 @@ import './fetch-polyfill'
 
 import {info, setFailed, warning} from '@actions/core'
 import {ConversationChain} from "langchain/chains";
-import {ChatOpenAI} from "langchain/dist/chat_models/openai";
 import {ChatPromptTemplate, MessagesPlaceholder} from 'langchain/prompts'
 import {OpenAIOptions, Options} from './options'
 import {BufferMemory} from "langchain/memory";
 import {ChainValues} from 'langchain/schema'
+import {ChatOpenAI} from "langchain/chat_models/openai";
 
 // define type to save parentMessageId and conversationId
 export interface Ids {
