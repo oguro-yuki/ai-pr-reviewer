@@ -400,7 +400,7 @@ ${filename}: ${summary}
 `
       }
       // ask chatgpt to summarize the summaries
-      const [summarizeResp] = await heavyBot.chat(
+      const summarizeResp = await heavyBot.chat(
         prompts.renderSummarizeChangesets(inputs)
       )
       if (summarizeResp === '') {
@@ -412,7 +412,7 @@ ${filename}: ${summary}
   }
 
   // final summary
-  const [summarizeFinalResponse] = await heavyBot.chat(
+  const summarizeFinalResponse = await heavyBot.chat(
     prompts.renderSummarize(inputs)
   )
   if (summarizeFinalResponse === '') {
@@ -421,7 +421,7 @@ ${filename}: ${summary}
 
   if (options.disableReleaseNotes === false) {
     // final release notes
-    const [releaseNotesResponse] = await heavyBot.chat(
+    const releaseNotesResponse = await heavyBot.chat(
       prompts.renderSummarizeReleaseNotes(inputs)
     )
     if (releaseNotesResponse === '') {
@@ -429,7 +429,6 @@ ${filename}: ${summary}
     } else {
       let message = '### Summary by CodeRabbit\n\n'
       message += releaseNotesResponse
-      info(`Summary: ${message}`)
       try {
         await commenter.updateDescription(
           context.payload.pull_request.number,
@@ -442,7 +441,7 @@ ${filename}: ${summary}
   }
 
   // generate a short summary as well
-  const [summarizeShortResponse] = await heavyBot.chat(
+  const summarizeShortResponse = await heavyBot.chat(
     prompts.renderSummarizeShort(inputs)
   )
   inputs.shortSummary = summarizeShortResponse

@@ -20547,7 +20547,7 @@ ${filename}: ${summary}
 `;
             }
             // ask chatgpt to summarize the summaries
-            const [summarizeResp] = await heavyBot.chat(prompts.renderSummarizeChangesets(inputs));
+            const summarizeResp = await heavyBot.chat(prompts.renderSummarizeChangesets(inputs));
             if (summarizeResp === '') {
                 (0,core.warning)('summarize: nothing obtained from openai');
             }
@@ -20557,20 +20557,19 @@ ${filename}: ${summary}
         }
     }
     // final summary
-    const [summarizeFinalResponse] = await heavyBot.chat(prompts.renderSummarize(inputs));
+    const summarizeFinalResponse = await heavyBot.chat(prompts.renderSummarize(inputs));
     if (summarizeFinalResponse === '') {
         (0,core.info)('summarize: nothing obtained from openai');
     }
     if (options.disableReleaseNotes === false) {
         // final release notes
-        const [releaseNotesResponse] = await heavyBot.chat(prompts.renderSummarizeReleaseNotes(inputs));
+        const releaseNotesResponse = await heavyBot.chat(prompts.renderSummarizeReleaseNotes(inputs));
         if (releaseNotesResponse === '') {
             (0,core.info)('release notes: nothing obtained from openai');
         }
         else {
             let message = '### Summary by CodeRabbit\n\n';
             message += releaseNotesResponse;
-            (0,core.info)(`Summary: ${message}`);
             try {
                 await commenter.updateDescription(context.payload.pull_request.number, message);
             }
@@ -20580,7 +20579,7 @@ ${filename}: ${summary}
         }
     }
     // generate a short summary as well
-    const [summarizeShortResponse] = await heavyBot.chat(prompts.renderSummarizeShort(inputs));
+    const summarizeShortResponse = await heavyBot.chat(prompts.renderSummarizeShort(inputs));
     inputs.shortSummary = summarizeShortResponse;
     let summarizeComment = `${summarizeFinalResponse}
 ${lib_commenter/* RAW_SUMMARY_START_TAG */.oi}
