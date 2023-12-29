@@ -36,10 +36,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         ['human', '{input}']
       ])
 
-      info(`azureOpenAIApiInstanceName: ${process.env.AZURE_OPENAI_API_INSTANCE_NAME}`)
-      info(`azureOpenAIApiDeploymentName: ${process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME}`)
-      info(`azureOpenAIApiKey: ${process.env.OPENAI_API_KEY}`)
-
       this.model = new ChatOpenAI({
         temperature: options.openaiModelTemperature,
         azureOpenAIApiKey: process.env.OPENAI_API_KEY,
@@ -86,7 +82,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
 
     if (this.api != null) {
       try {
-        response = this.api.call({input: message})
+        response = await this.api.call({input: message})
       } catch (e) {
         info(`response: ${response}, failed to send message to openai: ${e}`)
       }
