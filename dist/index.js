@@ -16833,17 +16833,20 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         }
     }
     chat = async (message) => {
+        (0,core.info)(`message: ${message}`);
         let res = '';
         try {
             res = await this.chat_(message);
             return res;
         }
         catch (e) {
+            (0,core.warning)(`Failed to review: ${e}, skipping.`);
             return res;
         }
     };
     chat_ = async (message) => {
         // record timing
+        (0,core.info)(`message: ${message}`);
         const start = Date.now();
         if (!message) {
             return '';
@@ -20705,7 +20708,7 @@ ${commentChain}
                 // perform review
                 try {
                     const [response] = await heavyBot.chat(prompts.renderReviewFileDiff(ins));
-                    if (response === '') {
+                    if (!response) {
                         (0,core.info)('review: nothing obtained from openai');
                         reviewsFailed.push(`${filename} (no response)`);
                         return;
