@@ -87,7 +87,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     if (this.api != null) {
       try {
         response = this.api.call({input: message})
-      } catch (e: unknown) {
+      } catch (e) {
         info(`response: ${response}, failed to send message to openai: ${e}`)
       }
       const end = Date.now()
