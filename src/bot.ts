@@ -75,6 +75,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
 
   private readonly chat_ = async (message: string): Promise<string> => {
     // record timing
+    info(`message: ${message}`)
     const start = Date.now()
     if (!message) {
       return ''
