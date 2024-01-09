@@ -147,3 +147,224 @@ export class OpenAIOptions {
     }
   }
 }
+
+export function getDebugDefault(): string {
+  return "false";
+}
+
+export function getMaxFilesDefault(): string {
+  return "150";
+}
+
+export function getReviewSimpleChangesDefault(): string {
+  return "false";
+}
+
+export function getReviewCommentLgtmDefault(): string {
+  return "false";
+}
+
+export function getPathFiltersDefault(): string {
+  return `
+      !dist/**
+      !**/*.app
+      !**/*.bin
+      !**/*.bz2
+      !**/*.class
+      !**/*.db
+      !**/*.csv
+      !**/*.tsv
+      !**/*.dat
+      !**/*.dll
+      !**/*.dylib
+      !**/*.egg
+      !**/*.glif
+      !**/*.gz
+      !**/*.xz
+      !**/*.zip
+      !**/*.7z
+      !**/*.rar
+      !**/*.zst
+      !**/*.ico
+      !**/*.jar
+      !**/*.tar
+      !**/*.war
+      !**/*.lo
+      !**/*.log
+      !**/*.mp3
+      !**/*.wav
+      !**/*.wma
+      !**/*.mp4
+      !**/*.avi
+      !**/*.mkv
+      !**/*.wmv
+      !**/*.m4a
+      !**/*.m4v
+      !**/*.3gp
+      !**/*.3g2
+      !**/*.rm
+      !**/*.mov
+      !**/*.flv
+      !**/*.iso
+      !**/*.swf
+      !**/*.flac
+      !**/*.nar
+      !**/*.o
+      !**/*.ogg
+      !**/*.otf
+      !**/*.p
+      !**/*.pdf
+      !**/*.doc
+      !**/*.docx
+      !**/*.xls
+      !**/*.xlsx
+      !**/*.ppt
+      !**/*.pptx
+      !**/*.pkl
+      !**/*.pickle
+      !**/*.pyc
+      !**/*.pyd
+      !**/*.pyo
+      !**/*.pub
+      !**/*.pem
+      !**/*.rkt
+      !**/*.so
+      !**/*.ss
+      !**/*.eot
+      !**/*.exe
+      !**/*.pb.go
+      !**/*.lock
+      !**/*.ttf
+      !**/*.yaml
+      !**/*.yml
+      !**/*.cfg
+      !**/*.toml
+      !**/*.ini
+      !**/*.mod
+      !**/*.sum
+      !**/*.work
+      !**/*.json
+      !**/*.mmd
+      !**/*.svg
+      !**/*.jpeg
+      !**/*.jpg
+      !**/*.png
+      !**/*.gif
+      !**/*.bmp
+      !**/*.tiff
+      !**/*.webm
+      !**/*.woff
+      !**/*.woff2
+      !**/*.dot
+      !**/*.md5sum
+      !**/*.wasm
+      !**/*.snap
+      !**/*.parquet
+      !**/gen/**
+      !**/_gen/**
+      !**/generated/**
+      !**/@generated/**
+      !**/vendor/**
+      !**/*.min.js
+      !**/*.min.js.map
+      !**/*.min.js.css
+      !**/*.tfstate
+      !**/*.tfstate.backup
+  `;
+}
+
+export function getDisableReviewDefault(): string {
+  return "false";
+}
+
+export function getDisableReleaseNotesDefault(): string {
+  return "false";
+}
+
+export function getOpenaiLightModelDefault(): string {
+  return "gpt-3.5-turbo";
+}
+
+export function getOpenaiHeavyModelDefault(): string {
+  return "gpt-4";
+}
+
+export function getOpenaiModelTemperatureDefault(): string {
+  return "0.05";
+}
+
+export function getOpenaiRetriesDefault(): string {
+  return "5";
+}
+
+export function getOpenaiTimeoutMsDefault(): string {
+  return "360000";
+}
+
+export function getOpenaiConcurrencyLimitDefault(): string {
+  return "6";
+}
+
+export function getGithubConcurrencyLimitDefault(): string {
+  return "6";
+}
+
+export function getSystemMessageDefault(): string {
+  return `
+      You are \`@coderabbitai\` (aka \`github-actions[bot]\`), a language model 
+      trained by OpenAI. Your purpose is to act as a highly experienced 
+      software engineer and provide a thorough review of the code hunks
+      and suggest code snippets to improve key areas such as:
+        - Logic
+        - Security
+        - Performance
+        - Data races
+        - Consistency
+        - Error handling
+        - Maintainability
+        - Modularity
+        - Complexity
+        - Optimization
+        - Best practices: DRY, SOLID, KISS
+
+      Do not comment on minor code style issues, missing 
+      comments/documentation. Identify and resolve significant 
+      concerns to improve overall code quality while deliberately 
+      disregarding minor issues.
+  `;
+}
+
+export function getSummarizeDefault(): string {
+  return `
+      Provide your final response in markdown with the following content:
+
+      - **Walkthrough**: A high-level summary of the overall change instead of 
+        specific files within 80 words.
+      - **Changes**: A markdown table of files and their summaries. Group files 
+        with similar changes together into a single row to save space.
+      - **Poem**: Below the changes, include a whimsical, short poem written by 
+        a rabbit to celebrate the changes. Format the poem as a quote using 
+        the ">" symbol and feel free to use emojis where relevant.
+
+      Avoid additional commentary as this summary will be added as a comment on the 
+      GitHub pull request. Use the titles "Walkthrough" and "Changes" and they must be H2.
+  `;
+}
+
+export function getSummarizeReleaseNotesDefault(): string {
+  return `
+      Craft concise release notes for the pull request. 
+      Focus on the purpose and user impact, categorizing changes as "New Feature", "Bug Fix", 
+      "Documentation", "Refactor", "Style", "Test", "Chore", or "Revert". Provide a bullet-point list, 
+      e.g., "- New Feature: Added search functionality to the UI". Limit your response to 50-100 words 
+      and emphasize features visible to the end-user while omitting code-level details.
+  `;
+}
+
+export function getLanguageDefault(): string {
+  return "en-US";
+}
+
+export function getBotIconDefault(): string {
+  return "<img src=\"https://avatars.githubusercontent.com/in/347564?s=41\" alt=\"Image description\" width=\"20\" height=\"20\">";
+}
