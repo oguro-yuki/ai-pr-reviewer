@@ -631,7 +631,7 @@ ${commentChain}
               lgtmCount += 1
               continue
             }
-            if (context.payload.pull_request == null) {
+            if (pullRequest == null) {
               console.warn('No pull request found, skipping.')
               continue
             }

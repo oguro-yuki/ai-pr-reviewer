@@ -650,8 +650,8 @@ ${chain}
     try {
       for (; ;) {
         const { data: comments } = await octokit.issues.listComments({
-          owner: repo.owner,
-          repo: repo.repo,
+          owner: this.pr.owner,
+          repo: this.pr.repoName,
           // eslint-disable-next-line camelcase
           issue_number: target,
           page,
@@ -733,19 +733,19 @@ ${chain}
     const allCommits = []
     let page = 1
     let commits
-    if (context && context.payload && context.payload.pull_request != null) {
+    if (this.pr != null) {
       do {
         commits = await octokit.pulls.listCommits({
           owner: this.pr.owner,
           repo: this.pr.repoName,
           // eslint-disable-next-line camelcase
-          pull_number: context.payload.pull_request.number,
+          pull_number:this.pr.id,
           // eslint-disable-next-line camelcase
           per_page: 100,
           page
         })
 
-        allCommits.push(...commits.data.map(commit => commit.sha))
+        allCommits.push(...commits.data.map((commit: { sha: string; }) => commit.sha))
         page++
       } while (commits.data.length > 0)
     }
