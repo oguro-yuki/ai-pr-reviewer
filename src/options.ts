@@ -1,4 +1,3 @@
-import {info} from '@actions/core'
 import {minimatch} from 'minimatch'
 import {TokenLimits} from './limits'
 
@@ -62,29 +61,29 @@ export class Options {
 
   // print all options using core.info
   print(): void {
-    info(`debug: ${this.debug}`)
-    info(`disable_review: ${this.disableReview}`)
-    info(`disable_release_notes: ${this.disableReleaseNotes}`)
-    info(`max_files: ${this.maxFiles}`)
-    info(`review_simple_changes: ${this.reviewSimpleChanges}`)
-    info(`review_comment_lgtm: ${this.reviewCommentLGTM}`)
-    info(`path_filters: ${this.pathFilters}`)
-    info(`system_message: ${this.systemMessage}`)
-    info(`openai_light_model: ${this.openaiLightModel}`)
-    info(`openai_heavy_model: ${this.openaiHeavyModel}`)
-    info(`openai_model_temperature: ${this.openaiModelTemperature}`)
-    info(`openai_retries: ${this.openaiRetries}`)
-    info(`openai_timeout_ms: ${this.openaiTimeoutMS}`)
-    info(`openai_concurrency_limit: ${this.openaiConcurrencyLimit}`)
-    info(`github_concurrency_limit: ${this.githubConcurrencyLimit}`)
-    info(`summary_token_limits: ${this.lightTokenLimits.string()}`)
-    info(`review_token_limits: ${this.heavyTokenLimits.string()}`)
-    info(`language: ${this.language}`)
+    console.info(`debug: ${this.debug}`)
+    console.info(`disable_review: ${this.disableReview}`)
+    console.info(`disable_release_notes: ${this.disableReleaseNotes}`)
+    console.info(`max_files: ${this.maxFiles}`)
+    console.info(`review_simple_changes: ${this.reviewSimpleChanges}`)
+    console.info(`review_comment_lgtm: ${this.reviewCommentLGTM}`)
+    console.info(`path_filters: ${this.pathFilters}`)
+    console.info(`system_message: ${this.systemMessage}`)
+    console.info(`openai_light_model: ${this.openaiLightModel}`)
+    console.info(`openai_heavy_model: ${this.openaiHeavyModel}`)
+    console.info(`openai_model_temperature: ${this.openaiModelTemperature}`)
+    console.info(`openai_retries: ${this.openaiRetries}`)
+    console.info(`openai_timeout_ms: ${this.openaiTimeoutMS}`)
+    console.info(`openai_concurrency_limit: ${this.openaiConcurrencyLimit}`)
+    console.info(`github_concurrency_limit: ${this.githubConcurrencyLimit}`)
+    console.info(`summary_token_limits: ${this.lightTokenLimits.string()}`)
+    console.info(`review_token_limits: ${this.heavyTokenLimits.string()}`)
+    console.info(`language: ${this.language}`)
   }
 
   checkPath(path: string): boolean {
     const ok = this.pathFilters.check(path)
-    info(`checking path: ${path} => ${ok}`)
+    console.info(`checking path: ${path} => ${ok}`)
     return ok
   }
 }

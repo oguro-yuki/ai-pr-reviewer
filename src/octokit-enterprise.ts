@@ -1,14 +1,15 @@
-import {getInput, warning} from '@actions/core'
-import {Octokit} from '@octokit/action'
+import {Octokit} from '@octokit/core'
 import {retry} from '@octokit/plugin-retry'
 import {throttling} from '@octokit/plugin-throttling'
+import {enterpriseServer37Admin} from '@octokit/plugin-enterprise-server'
 
-const token = getInput('token') || process.env.GITHUB_TOKEN
+const token = process.env.GITHUB_TOKEN
 
-const RetryAndThrottlingOctokit = Octokit.plugin(throttling, retry)
+const RetryAndThrottlingOctokit = Octokit.plugin(enterpriseServer37Admin, throttling, retry)
 
 export const octokit = new RetryAndThrottlingOctokit({
   auth: `token ${token}`,
+  baseUrl: "https://git.dmm.com/api/v3",
   throttle: {
     onRateLimit: (
       retryAfter: number,
@@ -16,19 +17,19 @@ export const octokit = new RetryAndThrottlingOctokit({
       _o: any,
       retryCount: number
     ) => {
-      warning(
+        console.warn(
         `Request quota exhausted for request ${options.method} ${options.url}
 Retry after: ${retryAfter} seconds
 Retry count: ${retryCount}
 `
       )
       if (retryCount <= 3) {
-        warning(`Retrying after ${retryAfter} seconds!`)
+          console.warn(`Retrying after ${retryAfter} seconds!`)
         return true
       }
     },
     onSecondaryRateLimit: (retryAfter: number, options: any) => {
-      warning(
+        console.warn(
         `SecondaryRateLimit detected for request ${options.method} ${options.url} ; retry after ${retryAfter} seconds`
       )
       // if we are doing a POST method on /repos/{owner}/{repo}/pulls/{pull_number}/reviews then we shouldn't retry

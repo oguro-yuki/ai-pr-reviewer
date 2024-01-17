@@ -1,4 +1,3 @@
-import {setFailed, warning} from '@actions/core'
 import {Bot} from './bot'
 import {
     getDebugDefault,
@@ -63,7 +62,7 @@ async function run(): Promise<void> {
             new OpenAIOptions(options.openaiLightModel, options.lightTokenLimits)
         )
     } catch (e: any) {
-        warning(
+        console.warn(
             `Skipped: failed to create summary bot, please check your openai_api_key: ${e}, backtrace: ${e.stack}`
         )
         return
@@ -76,7 +75,7 @@ async function run(): Promise<void> {
             new OpenAIOptions(options.openaiHeavyModel, options.heavyTokenLimits)
         )
     } catch (e: any) {
-        warning(
+        console.warn(
             `Skipped: failed to create review bot, please check your openai_api_key: ${e}, backtrace: ${e.stack}`
         )
         return
@@ -94,23 +93,23 @@ async function run(): Promise<void> {
         // ) {
         //     await handleReviewComment(heavyBot, options, prompts)
         } else {
-            warning('Skipped: this action only works on push events or pull_request')
+            console.warn('Skipped: this action only works on push events or pull_request')
         }
     } catch (e: any) {
         if (e instanceof Error) {
-            setFailed(`Failed to run: ${e.message}, backtrace: ${e.stack}`)
+            throw Error(`Failed to run: ${e.message}, backtrace: ${e.stack}`)
         } else {
-            setFailed(`Failed to run: ${e}, backtrace: ${e.stack}`)
+            throw Error(`Failed to run: ${e}, backtrace: ${e.stack}`)
         }
     }
 }
 
 process
     .on('unhandledRejection', (reason, p) => {
-        warning(`Unhandled Rejection at Promise: ${reason}, promise is ${p}`)
+        console.warn(`Unhandled Rejection at Promise: ${reason}, promise is ${p}`)
     })
     .on('uncaughtException', (e: any) => {
-        warning(`Uncaught Exception thrown: ${e}, backtrace: ${e.stack}`)
+        console.warn(`Uncaught Exception thrown: ${e}, backtrace: ${e.stack}`)
     })
 
 await run()

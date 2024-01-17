@@ -1,6 +1,4 @@
-import {error, info, warning} from '@actions/core'
 // eslint-disable-next-line camelcase
-import {context as github_context} from '@actions/github'
 import pLimit from 'p-limit'
 import {type Bot} from './bot'
 import {
@@ -13,14 +11,11 @@ import {
   SUMMARIZE_TAG
 } from './commenter'
 import {Inputs} from './inputs'
-import {octokit} from './octokit'
 import {type Options} from './options'
 import {type Prompts} from './prompts'
 import {getTokenCount} from './tokenizer'
-
-// eslint-disable-next-line camelcase
-const context = github_context
-const repo = context.repo
+import { OctokitApi } from './octokit-api'
+import { octokit } from './octokit-enterprise'
 
 const ignoreKeyword = '@coderabbitai: ignore'
 
@@ -30,36 +25,37 @@ export const codeReview = async (
   options: Options,
   prompts: Prompts
 ): Promise<void> => {
-  const commenter: Commenter = new Commenter()
-
+  
   const openaiConcurrencyLimit = pLimit(options.openaiConcurrencyLimit)
   const githubConcurrencyLimit = pLimit(options.githubConcurrencyLimit)
 
-  if (
-    context.eventName !== 'pull_request' &&
-    context.eventName !== 'pull_request_target'
-  ) {
-    warning(
-      `Skipped: current event is ${context.eventName}, only support pull_request event`
-    )
-    return
-  }
-  if (context.payload.pull_request == null) {
-    warning('Skipped: context.payload.pull_request is null')
+  // pull_requestイベントの場合のみ処理を続行したいが、CircleCIではイベントは取得不可なのでPRのURLがあるか無いかで判断する
+  const pullRequestUrl = process.env.CIRCLE_PULL_REQUEST
+  if (pullRequestUrl == null) {
+    console.warn('Skipped: CIRCLE_PULL_REQUEST is null')
     return
   }
 
+  // PRのURLから必要な情報を抽出
+  const pullRequest = PullRequest.fromPrUrl(pullRequestUrl)
+  const octokitApi = new OctokitApi(pullRequest)
+  const prDatail = await octokitApi.getPullRequest()
+
+  const commenter: Commenter = new Commenter(pullRequest)
+
+  // PRのタイトルと、あればbodyを取得
   const inputs: Inputs = new Inputs()
-  inputs.title = context.payload.pull_request.title
-  if (context.payload.pull_request.body != null) {
+  inputs.title = prDatail.title;
+  if (prDatail.body != null) {
     inputs.description = commenter.getDescription(
-      context.payload.pull_request.body
+      prDatail.body
     )
   }
 
   // if the description contains ignore_keyword, skip
+  // bodyのignoreをつけるとAIコードレビューをスキップできる
   if (inputs.description.includes(ignoreKeyword)) {
-    info('Skipped: description contains ignore_keyword')
+    console.info('Skipped: description contains ignore_keyword')
     return
   }
 
@@ -69,7 +65,7 @@ export const codeReview = async (
   // get SUMMARIZE_TAG message
   const existingSummarizeCmt = await commenter.findCommentWithTag(
     SUMMARIZE_TAG,
-    context.payload.pull_request.number
+    pullRequest.id
   )
   let existingCommitIdsBlock = ''
   let existingSummarizeCmtBody = ''
@@ -94,39 +90,39 @@ export const codeReview = async (
 
   if (
     highestReviewedCommitId === '' ||
-    highestReviewedCommitId === context.payload.pull_request.head.sha
+    highestReviewedCommitId === prDatail.headSha
   ) {
-    info(
+    console.info(
       `Will review from the base commit: ${
-        context.payload.pull_request.base.sha as string
+        prDatail.baseSha as string
       }`
     )
-    highestReviewedCommitId = context.payload.pull_request.base.sha
+    highestReviewedCommitId = prDatail.baseSha
   } else {
-    info(`Will review from commit: ${highestReviewedCommitId}`)
+    console.info(`Will review from commit: ${highestReviewedCommitId}`)
   }
 
   // Fetch the diff between the highest reviewed commit and the latest commit of the PR branch
   const incrementalDiff = await octokit.repos.compareCommits({
-    owner: repo.owner,
-    repo: repo.repo,
+    owner: pullRequest.owner,
+    repo: pullRequest.repoName,
     base: highestReviewedCommitId,
-    head: context.payload.pull_request.head.sha
+    head: prDatail.headSha
   })
 
   // Fetch the diff between the target branch's base commit and the latest commit of the PR branch
   const targetBranchDiff = await octokit.repos.compareCommits({
-    owner: repo.owner,
-    repo: repo.repo,
-    base: context.payload.pull_request.base.sha,
-    head: context.payload.pull_request.head.sha
+    owner: pullRequest.owner,
+    repo: pullRequest.repoName,
+    base: prDatail.baseSha,
+    head: prDatail.headSha
   })
 
-  const incrementalFiles = incrementalDiff.data.files
-  const targetBranchFiles = targetBranchDiff.data.files
+  const incrementalFiles: any[] = incrementalDiff.data.files
+  const targetBranchFiles: any[] = targetBranchDiff.data.files
 
   if (incrementalFiles == null || targetBranchFiles == null) {
-    warning('Skipped: files data is missing')
+    console.warn('Skipped: files data is missing')
     return
   }
 
@@ -138,7 +134,7 @@ export const codeReview = async (
   )
 
   if (files.length === 0) {
-    warning('Skipped: files is null')
+    console.warn('Skipped: files is null')
     return
   }
 
@@ -147,7 +143,7 @@ export const codeReview = async (
   const filterIgnoredFiles = []
   for (const file of files) {
     if (!options.checkPath(file.filename)) {
-      info(`skip for excluded path: ${file.filename}`)
+      console.info(`skip for excluded path: ${file.filename}`)
       filterIgnoredFiles.push(file)
     } else {
       filterSelectedFiles.push(file)
@@ -155,14 +151,14 @@ export const codeReview = async (
   }
 
   if (filterSelectedFiles.length === 0) {
-    warning('Skipped: filterSelectedFiles is null')
+    console.warn('Skipped: filterSelectedFiles is null')
     return
   }
 
   const commits = incrementalDiff.data.commits
 
   if (commits.length === 0) {
-    warning('Skipped: commits is null')
+    console.warn('Skipped: commits is null')
     return
   }
 
@@ -174,16 +170,16 @@ export const codeReview = async (
       githubConcurrencyLimit(async () => {
         // retrieve file contents
         let fileContent = ''
-        if (context.payload.pull_request == null) {
-          warning('Skipped: context.payload.pull_request is null')
+        if (pullRequest == null) {
+          console.warn('Skipped: context.payload.pull_request is null')
           return null
         }
         try {
           const contents = await octokit.repos.getContent({
-            owner: repo.owner,
-            repo: repo.repo,
+            owner: pullRequest.owner,
+            repo: pullRequest.repoName,
             path: file.filename,
-            ref: context.payload.pull_request.base.sha
+            ref: prDatail.baseSha
           })
           if (contents.data != null) {
             if (!Array.isArray(contents.data)) {
@@ -199,7 +195,7 @@ export const codeReview = async (
             }
           }
         } catch (e: any) {
-          warning(
+          console.warn(
             `Failed to get file contents: ${
               e as string
             }. This is OK if it's a new file.`
@@ -258,14 +254,14 @@ ${hunks.oldHunk}
   >
 
   if (filesAndChanges.length === 0) {
-    error('Skipped: no files to review')
+    console.error('Skipped: no files to review')
     return
   }
 
   let statusMsg = `<details>
 <summary>Commits</summary>
 Files that changed from the base of the PR and between ${highestReviewedCommitId} and ${
-    context.payload.pull_request.head.sha
+    prDatail.headSha
   } commits.
 </details>
 ${
@@ -311,10 +307,10 @@ ${
     fileContent: string,
     fileDiff: string
   ): Promise<[string, string, boolean] | null> => {
-    info(`summarize: ${filename}`)
+    console.info(`summarize: ${filename}`)
     const ins = inputs.clone()
     if (fileDiff.length === 0) {
-      warning(`summarize: file_diff is empty, skip ${filename}`)
+      console.warn(`summarize: file_diff is empty, skip ${filename}`)
       summariesFailed.push(`${filename} (empty diff)`)
       return null
     }
@@ -330,7 +326,7 @@ ${
     const tokens = getTokenCount(summarizePrompt)
 
     if (tokens > options.lightTokenLimits.requestTokens) {
-      info(`summarize: diff tokens exceeds limit, skip ${filename}`)
+      console.info(`summarize: diff tokens exceeds limit, skip ${filename}`)
       summariesFailed.push(`${filename} (diff tokens exceeds limit)`)
       return null
     }
@@ -340,7 +336,7 @@ ${
       const [summarizeResp] = await lightBot.chat(summarizePrompt)
 
       if (summarizeResp === '') {
-        info('summarize: nothing obtained from openai')
+        console.info('summarize: nothing obtained from openai')
         summariesFailed.push(`${filename} (nothing obtained from openai)`)
         return null
       } else {
@@ -357,14 +353,14 @@ ${
 
             // remove this line from the comment
             const summary = summarizeResp.replace(triageRegex, '').trim()
-            info(`filename: ${filename}, triage: ${triage}`)
+            console.info(`filename: ${filename}, triage: ${triage}`)
             return [filename, summary, needsReview]
           }
         }
         return [filename, summarizeResp, true]
       }
     } catch (e: any) {
-      warning(`summarize: error from openai: ${e as string}`)
+      console.warn(`summarize: error from openai: ${e as string}`)
       summariesFailed.push(`${filename} (error from openai: ${e as string})})`)
       return null
     }
@@ -404,7 +400,7 @@ ${filename}: ${summary}
         prompts.renderSummarizeChangesets(inputs)
       )
       if (summarizeResp === '') {
-        warning('summarize: nothing obtained from openai')
+        console.warn('summarize: nothing obtained from openai')
       } else {
         inputs.rawSummary = summarizeResp
       }
@@ -416,7 +412,7 @@ ${filename}: ${summary}
     prompts.renderSummarize(inputs)
   )
   if (summarizeFinalResponse === '') {
-    info('summarize: nothing obtained from openai')
+    console.info('summarize: nothing obtained from openai')
   }
 
   if (options.disableReleaseNotes === false) {
@@ -425,17 +421,17 @@ ${filename}: ${summary}
       prompts.renderSummarizeReleaseNotes(inputs)
     )
     if (releaseNotesResponse === '') {
-      info('release notes: nothing obtained from openai')
+      console.info('release notes: nothing obtained from openai')
     } else {
       let message = '### Summary by CodeRabbit\n\n'
       message += releaseNotesResponse
       try {
         await commenter.updateDescription(
-          context.payload.pull_request.number,
+          pullRequest.id,
           message
         )
       } catch (e: any) {
-        warning(`release notes: error from github: ${e.message as string}`)
+        console.warn(`release notes: error from github: ${e.message as string}`)
       }
     }
   }
@@ -524,7 +520,7 @@ ${
       fileContent: string,
       patches: Array<[number, number, string]>
     ): Promise<void> => {
-      info(`reviewing ${filename}`)
+      console.info(`reviewing ${filename}`)
       // make a copy of inputs
       const ins: Inputs = inputs.clone()
       ins.filename = filename
@@ -536,7 +532,7 @@ ${
       for (const [, , patch] of patches) {
         const patchTokens = getTokenCount(patch)
         if (tokens + patchTokens > options.heavyTokenLimits.requestTokens) {
-          info(
+          console.info(
             `only packing ${patchesToPack} / ${patches.length} patches, tokens: ${tokens} / ${options.heavyTokenLimits.requestTokens}`
           )
           break
@@ -547,17 +543,17 @@ ${
 
       let patchesPacked = 0
       for (const [startLine, endLine, patch] of patches) {
-        if (context.payload.pull_request == null) {
-          warning('No pull request found, skipping.')
+        if (pullRequest == null) {
+          console.warn('No pull request found, skipping.')
           continue
         }
         // see if we can pack more patches into this request
         if (patchesPacked >= patchesToPack) {
-          info(
+          console.info(
             `unable to pack more patches into this request, packed: ${patchesPacked}, total patches: ${patches.length}, skipping.`
           )
           if (options.debug) {
-            info(`prompt so far: ${prompts.renderReviewFileDiff(ins)}`)
+            console.info(`prompt so far: ${prompts.renderReviewFileDiff(ins)}`)
           }
           break
         }
@@ -566,7 +562,7 @@ ${
         let commentChain = ''
         try {
           const allChains = await commenter.getCommentChainsWithinRange(
-            context.payload.pull_request.number,
+            pullRequest.id,
             filename,
             startLine,
             endLine,
@@ -574,11 +570,11 @@ ${
           )
 
           if (allChains.length > 0) {
-            info(`Found comment chains: ${allChains} for ${filename}`)
+            console.info(`Found comment chains: ${allChains} for ${filename}`)
             commentChain = allChains
           }
         } catch (e: any) {
-          warning(
+          console.warn(
             `Failed to get comments: ${e as string}, skipping. backtrace: ${
               e.stack as string
             }`
@@ -619,7 +615,7 @@ ${commentChain}
             prompts.renderReviewFileDiff(ins)
           )
           if (!response) {
-            info('review: nothing obtained from openai')
+            console.info('review: nothing obtained from openai')
             reviewsFailed.push(`${filename} (no response)`)
             return
           }
@@ -636,7 +632,7 @@ ${commentChain}
               continue
             }
             if (context.payload.pull_request == null) {
-              warning('No pull request found, skipping.')
+              console.warn('No pull request found, skipping.')
               continue
             }
 
@@ -653,7 +649,7 @@ ${commentChain}
             }
           }
         } catch (e: any) {
-          warning(
+          console.warn(
             `Failed to review: ${e as string}, skipping. backtrace: ${
               e.stack as string
             }`
@@ -734,12 +730,12 @@ ${
     // add existing_comment_ids_block with latest head sha
     summarizeComment += `\n${commenter.addReviewedCommitId(
       existingCommitIdsBlock,
-      context.payload.pull_request.head.sha
+      prDatail.headSha
     )}`
 
     // post the review
     await commenter.submitReview(
-      context.payload.pull_request.number,
+      pullRequest.id,
       commits[commits.length - 1].sha,
       statusMsg
     )
@@ -929,7 +925,7 @@ ${review.comment}`
 
       reviews.push(review)
 
-      info(
+      console.info(
         `Stored comment for line range ${currentStartLine}-${currentEndLine}: ${currentComment.trim()}`
       )
     }
@@ -988,7 +984,7 @@ ${review.comment}`
       currentEndLine = parseInt(lineNumberRangeMatch[2], 10)
       currentComment = ''
       if (debug) {
-        info(`Found line number range: ${currentStartLine}-${currentEndLine}`)
+        console.info(`Found line number range: ${currentStartLine}-${currentEndLine}`)
       }
       continue
     }
@@ -999,7 +995,7 @@ ${review.comment}`
       currentEndLine = null
       currentComment = ''
       if (debug) {
-        info('Found comment separator')
+        console.info('Found comment separator')
       }
       continue
     }

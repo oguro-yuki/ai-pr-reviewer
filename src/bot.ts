@@ -1,6 +1,5 @@
 import './fetch-polyfill'
 
-import {info, setFailed, warning} from '@actions/core'
 import {ConversationChain} from "langchain/chains";
 import {ChatPromptTemplate, MessagesPlaceholder} from 'langchain/prompts'
 import {OpenAIOptions, Options} from './options'
@@ -64,7 +63,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
       res = await this.chat_(message)
       return res
     } catch (e: unknown) {
-      warning(
+      console.warn(
           `Failed to review: ${e as string}, skipping.`
       )
       return res
@@ -84,30 +83,30 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
       try {
         response = await this.api.call({input: message})
       } catch (e) {
-        info(`response: ${response}, failed to send message to openai: ${e}`)
+        console.info(`response: ${response}, failed to send message to openai: ${e}`)
       }
       const end = Date.now()
-      info(`response: ${JSON.stringify(response)}`)
-      info(
+      console.info(`response: ${JSON.stringify(response)}`)
+      console.info(
         `openai sendMessage (including retries) response time: ${
           end - start
         } ms`
       )
     } else {
-      setFailed('The OpenAI API is not initialized')
+      throw Error('The OpenAI API is not initialized')
     }
     let responseText = ''
     if (response != null) {
       responseText = response.response
     } else {
-      warning('openai response is null')
+      console.warn('openai response is null')
     }
     // remove the prefix "with " in the response
     if (responseText.startsWith('with ')) {
       responseText = responseText.substring(5)
     }
     if (this.options.debug) {
-      info(`openai responses: ${responseText}`)
+      console.info(`openai responses: ${responseText}`)
     }
     return responseText
   }
