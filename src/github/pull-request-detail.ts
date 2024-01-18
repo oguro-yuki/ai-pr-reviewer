@@ -1,4 +1,4 @@
-class PullRequestDetail {
+export class PullRequestDetail {
     title: string;
     body: string;
     headSha: string

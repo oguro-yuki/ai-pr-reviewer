@@ -1,4 +1,4 @@
-class PullRequest {
+export class PullRequest {
     id: number;
     owner: string;
     repoName: string;

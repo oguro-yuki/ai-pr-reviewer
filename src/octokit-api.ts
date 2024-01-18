@@ -1,3 +1,5 @@
+import { PullRequest } from "./github/pull-request";
+import { PullRequestDetail } from "./github/pull-request-detail";
 import { octokit } from "./octokit-enterprise";
 
 export class OctokitApi {

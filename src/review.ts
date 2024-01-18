@@ -16,6 +16,7 @@ import {type Prompts} from './prompts'
 import {getTokenCount} from './tokenizer'
 import { OctokitApi } from './octokit-api'
 import { octokit } from './octokit-enterprise'
+import { PullRequest } from './github/pull-request'
 
 const ignoreKeyword = '@coderabbitai: ignore'
 

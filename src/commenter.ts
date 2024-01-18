@@ -1,4 +1,5 @@
 // eslint-disable-next-line camelcase
+import { PullRequest } from "./github/pull-request";
 import { octokit } from "./octokit-enterprise";
 import { getBotIconDefault } from "./options";
 
