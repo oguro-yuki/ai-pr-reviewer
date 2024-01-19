@@ -8,7 +8,7 @@ const token = process.env.GITHUB_TOKEN
 const RetryAndThrottlingOctokit = Octokit.plugin(enterpriseServer37, throttling, retry)
 
 export const octokit = new RetryAndThrottlingOctokit({
-  auth: `token ${token}`,
+  auth: token,
   baseUrl: "https://git.dmm.com/api/v3",
   throttle: {
     onRateLimit: (
