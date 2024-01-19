@@ -20313,7 +20313,7 @@ class OctokitApi {
         this.pr = pr;
     }
     async getPullRequest() {
-        let properties = Object.getOwnPropertyNames(octokit);
+        let properties = Object.getOwnPropertyNames(octokit.enterpriseAdmin);
         console.log(properties);
         console.info('octokit get pulls');
         const prDetail = await octokit.pullRequests.get({
