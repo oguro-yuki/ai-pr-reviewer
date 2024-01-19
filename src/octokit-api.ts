@@ -10,11 +10,14 @@ export class OctokitApi {
     }
 
     async getPullRequest(): Promise<PullRequestDetail> {
+        console.info('octokit get pulls')
         const prDetail = await octokit.pulls.get({
             owner: this.pr.owner,
             repo: this.pr.repoName,
             pull_number: this.pr.id,
         })
+
+        console.info('octokit get pulls completed')
 
         return new PullRequestDetail(
             prDetail['title'],
