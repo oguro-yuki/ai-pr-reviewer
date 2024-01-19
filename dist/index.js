@@ -16922,7 +16922,8 @@ async function run() {
     }
     try {
         // check if the event is pull_request
-        if (process.env.EVENT_TYPE === 'pull_request') {
+        if (process.env.CIRCLE_PULL_REQUEST) {
+            console.info(`pullrequest url is ${process.env.CIRCLE_PULL_REQUEST}`);
             await (0,_review__WEBPACK_IMPORTED_MODULE_2__/* .codeReview */ .z)(lightBot, heavyBot, options, prompts);
             // CircleCIではレビューコメントのイベントを厳密に取れないため、レビューコメントに対する機能はオミットする
             // } else if (
