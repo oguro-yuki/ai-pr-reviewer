@@ -20314,7 +20314,7 @@ class OctokitApi {
     }
     async getPullRequest() {
         console.info('octokit get pulls');
-        const prDetail = await octokit.pulls.get({
+        const prDetail = await octokit.pullRequests.get({
             owner: this.pr.owner,
             repo: this.pr.repoName,
             pull_number: this.pr.id,
