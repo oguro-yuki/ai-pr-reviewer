@@ -83,9 +83,8 @@ async function run(): Promise<void> {
 
     try {
         // check if the event is pull_request
-        if (
-            process.env.EVENT_TYPE === 'pull_request'
-        ) {
+        if (process.env.CIRCLE_PULL_REQUEST) {
+            console.info(`pullrequest url is ${process.env.CIRCLE_PULL_REQUEST}`)
             await codeReview(lightBot, heavyBot, options, prompts)
         // CircleCIではレビューコメントのイベントを厳密に取れないため、レビューコメントに対する機能はオミットする
         // } else if (
