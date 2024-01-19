@@ -1,11 +1,11 @@
 import {Octokit} from '@octokit/core'
 import {retry} from '@octokit/plugin-retry'
 import {throttling} from '@octokit/plugin-throttling'
-import {enterpriseServer37Admin} from '@octokit/plugin-enterprise-server'
+import {enterpriseServer37} from '@octokit/plugin-enterprise-server'
 
 const token = process.env.GITHUB_TOKEN
 
-const RetryAndThrottlingOctokit = Octokit.plugin(enterpriseServer37Admin, throttling, retry)
+const RetryAndThrottlingOctokit = Octokit.plugin(enterpriseServer37, throttling, retry)
 
 export const octokit = new RetryAndThrottlingOctokit({
   auth: `token ${token}`,

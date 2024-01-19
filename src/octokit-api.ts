@@ -10,7 +10,7 @@ export class OctokitApi {
     }
 
     async getPullRequest(): Promise<PullRequestDetail> {
-        let properties = Object.getOwnPropertyNames(octokit.enterpriseAdmin);
+        let properties = Object.getOwnPropertyNames(octokit);
         console.log(properties);
         console.info('octokit get pulls')
         const prDetail = await octokit.pullRequests.get({

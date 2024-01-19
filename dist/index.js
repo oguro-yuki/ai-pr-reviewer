@@ -19550,7 +19550,7 @@ var plugin_enterprise_server_dist_node = __nccwpck_require__(7494);
 
 
 const token = process.env.GITHUB_TOKEN;
-const RetryAndThrottlingOctokit = dist_node.Octokit.plugin(plugin_enterprise_server_dist_node.enterpriseServer37Admin, plugin_throttling_dist_node.throttling, plugin_retry_dist_node/* retry */.XD);
+const RetryAndThrottlingOctokit = dist_node.Octokit.plugin(plugin_enterprise_server_dist_node.enterpriseServer37, plugin_throttling_dist_node.throttling, plugin_retry_dist_node/* retry */.XD);
 const octokit = new RetryAndThrottlingOctokit({
     auth: `token ${token}`,
     baseUrl: "https://git.dmm.com/api/v3",
@@ -20313,7 +20313,7 @@ class OctokitApi {
         this.pr = pr;
     }
     async getPullRequest() {
-        let properties = Object.getOwnPropertyNames(octokit.enterpriseAdmin);
+        let properties = Object.getOwnPropertyNames(octokit);
         console.log(properties);
         console.info('octokit get pulls');
         const prDetail = await octokit.pullRequests.get({
