@@ -388,6 +388,7 @@ ${
     summary => summary !== null
   ) as Array<[string, string, boolean]>
 
+  console.info(`summaries is ${summaries}`)
   if (summaries.length > 0) {
     const batchSize = 10
     // join summaries into one in the batches of batchSize

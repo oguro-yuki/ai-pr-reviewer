@@ -20640,6 +20640,7 @@ ${filterIgnoredFiles.length > 0
         }
     }
     const summaries = (await Promise.all(summaryPromises)).filter(summary => summary !== null);
+    console.info(`summaries is ${summaries}`);
     if (summaries.length > 0) {
         const batchSize = 10;
         // join summaries into one in the batches of batchSize
