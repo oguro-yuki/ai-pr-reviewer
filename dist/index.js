@@ -16833,6 +16833,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         let res = '';
         try {
             res = await this.chat_(message);
+            console.info(`raw res is  ${res}`);
             return res;
         }
         catch (e) {
@@ -20540,14 +20541,12 @@ ${hunks.oldHunk}
             return null;
         }
     })));
-    console.info(`filteredFiles is ${filteredFiles}`);
     // Filter out any null results
     const filesAndChanges = filteredFiles.filter(file => file !== null);
     if (filesAndChanges.length === 0) {
         console.error('Skipped: no files to review');
         return;
     }
-    console.info(`filesAndChanges is ${filesAndChanges}`);
     let statusMsg = `<details>
 <summary>Commits</summary>
 Files that changed from the base of the PR and between ${highestReviewedCommitId} and ${prDatail.headSha} commits.
@@ -20600,7 +20599,7 @@ ${filterIgnoredFiles.length > 0
         // summarize content
         try {
             const summarizeResp = await lightBot.chat(summarizePrompt);
-            console.info(`rsummarizeResp Array is  ${summarizeResp}`);
+            console.info(`summarizeResp Array is  ${summarizeResp}`);
             if (summarizeResp === '') {
                 console.info('summarize: nothing obtained from openai');
                 summariesFailed.push(`${filename} (nothing obtained from openai)`);
@@ -20631,6 +20630,7 @@ ${filterIgnoredFiles.length > 0
             return null;
         }
     };
+    // ファイルごとに変更点の概要をOpenAIに作成してもらう
     const summaryPromises = [];
     const skippedFiles = [];
     for (const [filename, fileContent, fileDiff] of filesAndChanges) {
@@ -20642,7 +20642,7 @@ ${filterIgnoredFiles.length > 0
         }
     }
     const summaries = (await Promise.all(summaryPromises)).filter(summary => summary !== null);
-    console.info(`summaries is ${summaries}`);
+    // OpenAIにウォークスルーしてもらうため投げるメッセージに必要な概要情報を生成
     if (summaries.length > 0) {
         const batchSize = 10;
         // join summaries into one in the batches of batchSize
@@ -20655,7 +20655,7 @@ ${filename}: ${summary}
 `;
             }
             // ask chatgpt to summarize the summaries
-            console.info(`heavyBot message is ${prompts.renderSummarizeChangesets(inputs)}`);
+            // OpenAIに概要を作成してもらう
             const summarizeResp = await heavyBot.chat(prompts.renderSummarizeChangesets(inputs));
             if (summarizeResp === '') {
                 console.warn('summarize: nothing obtained from openai');
@@ -20665,7 +20665,6 @@ ${filename}: ${summary}
             }
         }
     }
-    console.info(`raw summary is ${inputs.rawSummary}`);
     // final summary
     const summarizeFinalResponse = await heavyBot.chat(prompts.renderSummarize(inputs));
     if (summarizeFinalResponse === '') {

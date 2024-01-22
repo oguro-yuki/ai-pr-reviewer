@@ -251,8 +251,6 @@ ${hunks.oldHunk}
     )
   )
 
-  console.info(`filteredFiles is ${filteredFiles}`)
-
   // Filter out any null results
   const filesAndChanges = filteredFiles.filter(file => file !== null) as Array<
     [string, string, string, Array<[number, number, string]>]
@@ -262,8 +260,6 @@ ${hunks.oldHunk}
     console.error('Skipped: no files to review')
     return
   }
-
-  console.info(`filesAndChanges is ${filesAndChanges}`)
 
   let statusMsg = `<details>
 <summary>Commits</summary>
@@ -341,7 +337,7 @@ ${
     // summarize content
     try {
       const summarizeResp = await lightBot.chat(summarizePrompt)
-      console.info(`rsummarizeResp Array is  ${summarizeResp}`)
+      console.info(`summarizeResp Array is  ${summarizeResp}`)
 
       if (summarizeResp === '') {
         console.info('summarize: nothing obtained from openai')
@@ -374,6 +370,7 @@ ${
     }
   }
 
+  // ファイルごとに変更点の概要をOpenAIに作成してもらう
   const summaryPromises = []
   const skippedFiles = []
   for (const [filename, fileContent, fileDiff] of filesAndChanges) {
@@ -392,7 +389,7 @@ ${
     summary => summary !== null
   ) as Array<[string, string, boolean]>
 
-  console.info(`summaries is ${summaries}`)
+  // OpenAIにウォークスルーしてもらうため投げるメッセージに必要な概要情報を生成
   if (summaries.length > 0) {
     const batchSize = 10
     // join summaries into one in the batches of batchSize
@@ -405,7 +402,7 @@ ${filename}: ${summary}
 `
       }
       // ask chatgpt to summarize the summaries
-      console.info(`heavyBot message is ${prompts.renderSummarizeChangesets(inputs)}`)
+      // OpenAIに概要を作成してもらう
       const summarizeResp = await heavyBot.chat(
         prompts.renderSummarizeChangesets(inputs)
       )
@@ -416,8 +413,6 @@ ${filename}: ${summary}
       }
     }
   }
-
-  console.info(`raw summary is ${inputs.rawSummary}`)
 
   // final summary
   const summarizeFinalResponse = await heavyBot.chat(
