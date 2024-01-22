@@ -20318,8 +20318,7 @@ class OctokitApi {
             repo: this.pr.repoName,
             pull_number: this.pr.id,
         });
-        console.info(Object.keys(prDetail));
-        return new PullRequestDetail(prDetail['title'], prDetail['body'], prDetail['head']['sha'], prDetail['base']['sha']);
+        return new PullRequestDetail(prDetail.data.title, prDetail.data.body, prDetail.data.head.sha, prDetail.data.base.sha);
     }
 }
 
