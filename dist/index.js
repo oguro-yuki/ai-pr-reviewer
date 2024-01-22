@@ -19553,7 +19553,7 @@ const token = process.env.GITHUB_TOKEN;
 const RetryAndThrottlingOctokit = dist_node.Octokit.plugin(plugin_enterprise_server_dist_node.enterpriseServer37, plugin_throttling_dist_node.throttling, plugin_retry_dist_node/* retry */.XD);
 const octokit = new RetryAndThrottlingOctokit({
     auth: token,
-    baseUrl: "https://git.dmm.com/api/v3",
+    baseUrl: process.env.GIT_BASE_URL,
     throttle: {
         onRateLimit: (retryAfter, options, _o, retryCount) => {
             console.warn(`Request quota exhausted for request ${options.method} ${options.url}
@@ -20313,7 +20313,7 @@ class OctokitApi {
         this.pr = pr;
     }
     async getPullRequest() {
-        console.info(`github token is ${process.env.CIRCLE_PULL_REQUEST}`);
+        console.info(`github token is ${process.env.GIT_BASE_URL}`);
         const prDetail = await octokit.pulls.get({
             owner: this.pr.owner,
             repo: this.pr.repoName,

@@ -9,7 +9,7 @@ const RetryAndThrottlingOctokit = Octokit.plugin(enterpriseServer37, throttling,
 
 export const octokit = new RetryAndThrottlingOctokit({
   auth: token,
-  baseUrl: "https://git.dmm.com/api/v3",
+  baseUrl: process.env.GIT_BASE_URL,
   throttle: {
     onRateLimit: (
       retryAfter: number,

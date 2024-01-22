@@ -10,7 +10,7 @@ export class OctokitApi {
     }
 
     async getPullRequest(): Promise<PullRequestDetail> {
-        console.info(`github token is ${process.env.CIRCLE_PULL_REQUEST}`)
+        console.info(`github token is ${process.env.GIT_BASE_URL}`)
         const prDetail = await octokit.pulls.get({
             owner: this.pr.owner,
             repo: this.pr.repoName,
