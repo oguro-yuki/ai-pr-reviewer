@@ -338,10 +338,9 @@ ${
       return null
     }
 
-    console.info(`summarizePrompt is ${summarizePrompt}`)
     // summarize content
     try {
-      const [summarizeResp] = await lightBot.chat(summarizePrompt)
+      const summarizeResp = await lightBot.chat(summarizePrompt)
       console.info(`rsummarizeResp Array is  ${summarizeResp}`)
 
       if (summarizeResp === '') {

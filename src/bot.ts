@@ -61,7 +61,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     let res: string = ''
     try {
       res = await this.chat_(message)
-      console.info(`raw summarize is  ${res}`)
       return res
     } catch (e: unknown) {
       console.warn(
