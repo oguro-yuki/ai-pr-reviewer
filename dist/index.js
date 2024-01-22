@@ -16833,6 +16833,7 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         let res = '';
         try {
             res = await this.chat_(message);
+            console.info(`raw summarize is  ${res}`);
             return res;
         }
         catch (e) {
@@ -20601,6 +20602,7 @@ ${filterIgnoredFiles.length > 0
         // summarize content
         try {
             const [summarizeResp] = await lightBot.chat(summarizePrompt);
+            console.info(`rsummarizeResp Array is  ${summarizeResp}`);
             if (summarizeResp === '') {
                 console.info('summarize: nothing obtained from openai');
                 summariesFailed.push(`${filename} (nothing obtained from openai)`);

@@ -342,6 +342,7 @@ ${
     // summarize content
     try {
       const [summarizeResp] = await lightBot.chat(summarizePrompt)
+      console.info(`rsummarizeResp Array is  ${summarizeResp}`)
 
       if (summarizeResp === '') {
         console.info('summarize: nothing obtained from openai')
