@@ -104,6 +104,7 @@ export const codeReview = async (
   }
 
   // Fetch the diff between the highest reviewed commit and the latest commit of the PR branch
+  // すでにレビュー済みのコミットと最新のコミットを比較
   const incrementalDiff = await octokit.repos.compareCommits({
     owner: pullRequest.owner,
     repo: pullRequest.repoName,
@@ -112,6 +113,7 @@ export const codeReview = async (
   })
 
   // Fetch the diff between the target branch's base commit and the latest commit of the PR branch
+  // ベースブランチとPRブランチの比較
   const targetBranchDiff = await octokit.repos.compareCommits({
     owner: pullRequest.owner,
     repo: pullRequest.repoName,
@@ -407,6 +409,8 @@ ${filename}: ${summary}
       }
     }
   }
+
+  console.info(`raw summary is ${inputs.rawSummary}`)
 
   // final summary
   const summarizeFinalResponse = await heavyBot.chat(
