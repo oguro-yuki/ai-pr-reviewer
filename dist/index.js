@@ -20540,12 +20540,14 @@ ${hunks.oldHunk}
             return null;
         }
     })));
+    console.info(`filteredFiles is ${filteredFiles}`);
     // Filter out any null results
     const filesAndChanges = filteredFiles.filter(file => file !== null);
     if (filesAndChanges.length === 0) {
         console.error('Skipped: no files to review');
         return;
     }
+    console.info(`filesAndChanges is ${filesAndChanges}`);
     let statusMsg = `<details>
 <summary>Commits</summary>
 Files that changed from the base of the PR and between ${highestReviewedCommitId} and ${prDatail.headSha} commits.

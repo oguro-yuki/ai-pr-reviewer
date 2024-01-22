@@ -251,6 +251,8 @@ ${hunks.oldHunk}
     )
   )
 
+  console.info(`filteredFiles is ${filteredFiles}`)
+
   // Filter out any null results
   const filesAndChanges = filteredFiles.filter(file => file !== null) as Array<
     [string, string, string, Array<[number, number, string]>]
@@ -260,6 +262,8 @@ ${hunks.oldHunk}
     console.error('Skipped: no files to review')
     return
   }
+
+  console.info(`filesAndChanges is ${filesAndChanges}`)
 
   let statusMsg = `<details>
 <summary>Commits</summary>
