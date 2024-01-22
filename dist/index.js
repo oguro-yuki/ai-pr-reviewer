@@ -20313,13 +20313,12 @@ class OctokitApi {
         this.pr = pr;
     }
     async getPullRequest() {
-        console.info(`github token is ${process.env.GITHUB_ACCESS_TOKEN}`);
         const prDetail = await octokit.pulls.get({
             owner: this.pr.owner,
             repo: this.pr.repoName,
             pull_number: this.pr.id,
         });
-        console.info('octokit get pulls completed');
+        console.info(Object.keys(prDetail));
         return new PullRequestDetail(prDetail['title'], prDetail['body'], prDetail['head']['sha'], prDetail['base']['sha']);
     }
 }
