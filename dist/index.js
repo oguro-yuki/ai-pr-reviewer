@@ -19549,7 +19549,7 @@ var plugin_enterprise_server_dist_node = __nccwpck_require__(7494);
 
 
 
-const token = process.env.GITHUB_TOKEN;
+const token = process.env.GITHUB_ACCESS_TOKEN;
 const RetryAndThrottlingOctokit = dist_node.Octokit.plugin(plugin_enterprise_server_dist_node.enterpriseServer37, plugin_throttling_dist_node.throttling, plugin_retry_dist_node/* retry */.XD);
 const octokit = new RetryAndThrottlingOctokit({
     auth: token,
@@ -20313,7 +20313,7 @@ class OctokitApi {
         this.pr = pr;
     }
     async getPullRequest() {
-        console.info(`github token is ${process.env.GIT_BASE_URL}`);
+        console.info(`github token is ${process.env.GITHUB_ACCESS_TOKEN}`);
         const prDetail = await octokit.pulls.get({
             owner: this.pr.owner,
             repo: this.pr.repoName,

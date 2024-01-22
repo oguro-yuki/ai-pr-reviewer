@@ -3,7 +3,7 @@ import {retry} from '@octokit/plugin-retry'
 import {throttling} from '@octokit/plugin-throttling'
 import {enterpriseServer37} from '@octokit/plugin-enterprise-server'
 
-const token = process.env.GITHUB_TOKEN
+const token = process.env.GITHUB_ACCESS_TOKEN
 
 const RetryAndThrottlingOctokit = Octokit.plugin(enterpriseServer37, throttling, retry)
 
