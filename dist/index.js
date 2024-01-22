@@ -20595,6 +20595,7 @@ ${filterIgnoredFiles.length > 0
             summariesFailed.push(`${filename} (diff tokens exceeds limit)`);
             return null;
         }
+        console.info(`summarizePrompt is ${summarizePrompt}`);
         // summarize content
         try {
             const [summarizeResp] = await lightBot.chat(summarizePrompt);
@@ -20651,6 +20652,7 @@ ${filename}: ${summary}
 `;
             }
             // ask chatgpt to summarize the summaries
+            console.info(`heavyBot message is ${prompts.renderSummarizeChangesets(inputs)}`);
             const summarizeResp = await heavyBot.chat(prompts.renderSummarizeChangesets(inputs));
             if (summarizeResp === '') {
                 console.warn('summarize: nothing obtained from openai');
