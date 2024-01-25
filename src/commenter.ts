@@ -237,7 +237,7 @@ ${COMMENT_TAG}`
 
 ${statusMsg}
 `
-
+    console.info(`submit review start. reviewCommentsBuffer is ${this.reviewCommentsBuffer.length}`)
     if (this.reviewCommentsBuffer.length === 0) {
       // Submit empty review with statusMsg
       console.info(`Submitting empty review for PR #${pullNumber}`)

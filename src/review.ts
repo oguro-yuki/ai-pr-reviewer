@@ -626,6 +626,7 @@ ${commentChain}
             reviewsFailed.push(`${filename} (no response)`)
             return
           }
+          console.info('parseReview start')
           // parse review
           const reviews = parseReview(response, patches, options.debug)
           for (const review of reviews) {
@@ -655,6 +656,7 @@ ${commentChain}
               reviewsFailed.push(`${filename} comment failed (${e as string})`)
             }
           }
+          console.info(`reviewCount is ${reviewCount}`)
         } catch (e: any) {
           console.warn(
             `Failed to review: ${e as string}, skipping. backtrace: ${
