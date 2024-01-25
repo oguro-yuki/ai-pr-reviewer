@@ -618,7 +618,7 @@ ${commentChain}
       if (patchesPacked > 0) {
         // perform review
         try {
-          const [response] = await heavyBot.chat(
+          const response = await heavyBot.chat(
             prompts.renderReviewFileDiff(ins)
           )
           if (!response) {
@@ -626,9 +626,11 @@ ${commentChain}
             reviewsFailed.push(`${filename} (no response)`)
             return
           }
+          console.info(`Review response is ${response}`)
           console.info('parseReview start')
           // parse review
           const reviews = parseReview(response, patches, options.debug)
+          console.info(`reviews count is ${reviews.length}`)
           for (const review of reviews) {
             // check for LGTM
             if (
