@@ -18773,7 +18773,7 @@ class TokenLimits {
             this.responseTokens = 2000;
         }
         else {
-            this.maxTokens = 3800;
+            this.maxTokens = 4000;
             this.responseTokens = 1000;
         }
         // provide some margin for the request tokens
@@ -19747,6 +19747,7 @@ ${COMMENT_TAG}`;
 
 ${statusMsg}
 `;
+        console.info(`submit review start. reviewCommentsBuffer is ${this.reviewCommentsBuffer.length}`);
         if (this.reviewCommentsBuffer.length === 0) {
             // Submit empty review with statusMsg
             console.info(`Submitting empty review for PR #${pullNumber}`);
@@ -20820,6 +20821,7 @@ ${commentChain}
                         reviewsFailed.push(`${filename} (no response)`);
                         return;
                     }
+                    console.info('parseReview start');
                     // parse review
                     const reviews = parseReview(response, patches, options.debug);
                     for (const review of reviews) {
@@ -20842,6 +20844,7 @@ ${commentChain}
                             reviewsFailed.push(`${filename} comment failed (${e})`);
                         }
                     }
+                    console.info(`reviewCount is ${reviewCount}`);
                 }
                 catch (e) {
                     console.warn(`Failed to review: ${e}, skipping. backtrace: ${e.stack}`);
