@@ -19234,6 +19234,7 @@ For fixes, use \`diff\` code blocks, marking changes with \`+\` or \`-\`. The li
 
 If there are no issues found on a line range, you MUST respond with the 
 text \`LGTM!\` for that line range in the review section. 
+Please answer in Japanese.
 
 ## Example
 
