@@ -615,7 +615,7 @@ ${commentChain}
       if (patchesPacked > 0) {
         // perform review
         try {
-          const [response] = await heavyBot.chat(
+          const response = await heavyBot.chat(
             prompts.renderReviewFileDiff(ins)
           )
           if (!response) {
