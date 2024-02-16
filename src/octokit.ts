@@ -8,7 +8,7 @@ const token = getInput('token') || process.env.GITHUB_TOKEN
 const RetryAndThrottlingOctokit = Octokit.plugin(throttling, retry)
 
 export const octokit = new RetryAndThrottlingOctokit({
-  auth: `token ${token}`,
+  auth: token,
   throttle: {
     onRateLimit: (
       retryAfter: number,
