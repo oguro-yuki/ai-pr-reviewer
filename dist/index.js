@@ -17715,7 +17715,7 @@ __webpack_async_result__();
 const token = (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput)('token') || process.env.GITHUB_TOKEN;
 const RetryAndThrottlingOctokit = _octokit_action__WEBPACK_IMPORTED_MODULE_1__.Octokit.plugin(_octokit_plugin_throttling__WEBPACK_IMPORTED_MODULE_2__.throttling, _octokit_plugin_retry__WEBPACK_IMPORTED_MODULE_3__/* .retry */ .XD);
 const octokit = new RetryAndThrottlingOctokit({
-    auth: token,
+    auth: `${token}`,
     throttle: {
         onRateLimit: (retryAfter, options, _o, retryCount) => {
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Request quota exhausted for request ${options.method} ${options.url}
