@@ -337,7 +337,7 @@ ${
 
     // summarize content
     try {
-      const [summarizeResp] = await lightBot.chat(summarizePrompt)
+      const summarizeResp = await lightBot.chat(summarizePrompt)
 
       if (summarizeResp === '') {
         info('summarize: nothing obtained from openai')

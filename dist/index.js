@@ -20466,7 +20466,7 @@ ${filterIgnoredFiles.length > 0
         }
         // summarize content
         try {
-            const [summarizeResp] = await lightBot.chat(summarizePrompt);
+            const summarizeResp = await lightBot.chat(summarizePrompt);
             if (summarizeResp === '') {
                 (0,core.info)('summarize: nothing obtained from openai');
                 summariesFailed.push(`${filename} (nothing obtained from openai)`);
