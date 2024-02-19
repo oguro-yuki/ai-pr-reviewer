@@ -383,6 +383,7 @@ ${
       )
       fullContents = fileContent
     } else {
+      info(`${filename} is skipped`)
       skippedFiles.push(filename)
     }
   }
@@ -410,6 +411,8 @@ ${filename}: ${summary}
       if (summarizeResp === '') {
         warning('summarize: nothing obtained from openai')
       } else {
+        info(`filesAndChanges size is ${filesAndChanges.length}`)
+        info(`fullContents is ${!fullContents}`)
         if (filesAndChanges.length === 1 && fullContents) {
           info('summarize to fullContents')
           inputs.rawSummary = fullContents

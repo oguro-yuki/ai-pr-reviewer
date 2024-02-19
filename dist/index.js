@@ -20507,6 +20507,7 @@ ${filterIgnoredFiles.length > 0
             fullContents = fileContent;
         }
         else {
+            (0,core.info)(`${filename} is skipped`);
             skippedFiles.push(filename);
         }
     }
@@ -20523,12 +20524,14 @@ ${filename}: ${summary}
 `;
             }
             // ask chatgpt to summarize the summaries
-            (0,core.info)('SummarizeChangesets send to heavyBot');
+            (0,core.info)('ReviewFileDiff send to heavyBot');
             const summarizeResp = await heavyBot.chat(prompts.renderSummarizeChangesets(inputs));
             if (summarizeResp === '') {
                 (0,core.warning)('summarize: nothing obtained from openai');
             }
             else {
+                (0,core.info)(`filesAndChanges size is ${filesAndChanges.length}`);
+                (0,core.info)(`fullContents is ${!fullContents}`);
                 if (filesAndChanges.length === 1 && fullContents) {
                     (0,core.info)('summarize to fullContents');
                     inputs.rawSummary = fullContents;
