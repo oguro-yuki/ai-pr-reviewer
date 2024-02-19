@@ -20466,6 +20466,7 @@ ${filterIgnoredFiles.length > 0
         }
         // summarize content
         try {
+            (0,core.info)('summarizePrompt send to lightBot');
             const summarizeResp = await lightBot.chat(summarizePrompt);
             if (summarizeResp === '') {
                 (0,core.info)('summarize: nothing obtained from openai');
@@ -20522,15 +20523,18 @@ ${filename}: ${summary}
 `;
             }
             // ask chatgpt to summarize the summaries
+            (0,core.info)('SummarizeChangesets send to heavyBot');
             const summarizeResp = await heavyBot.chat(prompts.renderSummarizeChangesets(inputs));
             if (summarizeResp === '') {
                 (0,core.warning)('summarize: nothing obtained from openai');
             }
             else {
                 if (filesAndChanges.length === 1 && fullContents) {
+                    (0,core.info)('summarize to fullContents');
                     inputs.rawSummary = fullContents;
                 }
                 else {
+                    (0,core.info)('summarize to summarizeResp');
                     inputs.rawSummary = summarizeResp;
                 }
             }
@@ -20543,6 +20547,7 @@ ${filename}: ${summary}
     }
     if (options.disableReleaseNotes === false) {
         // final release notes
+        (0,core.info)('SummarizeReleaseNotes send to heavyBot');
         const releaseNotesResponse = await heavyBot.chat(prompts.renderSummarizeReleaseNotes(inputs));
         if (releaseNotesResponse === '') {
             (0,core.info)('release notes: nothing obtained from openai');
@@ -20559,6 +20564,7 @@ ${filename}: ${summary}
         }
     }
     // generate a short summary as well
+    (0,core.info)('SummarizeShort send to heavyBot');
     const summarizeShortResponse = await heavyBot.chat(prompts.renderSummarizeShort(inputs));
     inputs.shortSummary = summarizeShortResponse;
     let summarizeComment = `${summarizeFinalResponse}
@@ -20685,6 +20691,7 @@ ${commentChain}
             if (patchesPacked > 0) {
                 // perform review
                 try {
+                    (0,core.info)('ReviewFileDiff send to heavyBot');
                     const response = await heavyBot.chat(prompts.renderReviewFileDiff(ins));
                     if (!response) {
                         (0,core.info)('review: nothing obtained from openai');

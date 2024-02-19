@@ -337,6 +337,7 @@ ${
 
     // summarize content
     try {
+      info('summarizePrompt send to lightBot')
       const summarizeResp = await lightBot.chat(summarizePrompt)
 
       if (summarizeResp === '') {
@@ -402,6 +403,7 @@ ${filename}: ${summary}
 `
       }
       // ask chatgpt to summarize the summaries
+      info('ReviewFileDiff send to heavyBot')
       const summarizeResp = await heavyBot.chat(
         prompts.renderSummarizeChangesets(inputs)
       )
@@ -409,8 +411,10 @@ ${filename}: ${summary}
         warning('summarize: nothing obtained from openai')
       } else {
         if (filesAndChanges.length === 1 && fullContents) {
+          info('summarize to fullContents')
           inputs.rawSummary = fullContents
         } else {
+          info('summarize to summarizeResp')
           inputs.rawSummary = summarizeResp
         }
       }
@@ -427,6 +431,7 @@ ${filename}: ${summary}
 
   if (options.disableReleaseNotes === false) {
     // final release notes
+    info('SummarizeReleaseNotes send to heavyBot')
     const releaseNotesResponse = await heavyBot.chat(
       prompts.renderSummarizeReleaseNotes(inputs)
     )
@@ -447,6 +452,7 @@ ${filename}: ${summary}
   }
 
   // generate a short summary as well
+  info('SummarizeShort send to heavyBot')
   const summarizeShortResponse = await heavyBot.chat(
     prompts.renderSummarizeShort(inputs)
   )
@@ -621,6 +627,7 @@ ${commentChain}
       if (patchesPacked > 0) {
         // perform review
         try {
+          info('ReviewFileDiff send to heavyBot')
           const response = await heavyBot.chat(
             prompts.renderReviewFileDiff(ins)
           )
