@@ -53,7 +53,7 @@ $raw_summary
 
   summarizePrefix = `以下はMVPキャンパスの内容です:
       \`\`\`
-      $file_content
+      $raw_summary
       \`\`\`
 
 `

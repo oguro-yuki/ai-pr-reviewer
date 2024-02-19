@@ -19737,7 +19737,7 @@ $raw_summary
 `;
     summarizePrefix = `以下はMVPキャンパスの内容です:
       \`\`\`
-      $file_content
+      $raw_summary
       \`\`\`
 
 `;
@@ -20499,9 +20499,11 @@ ${filterIgnoredFiles.length > 0
     };
     const summaryPromises = [];
     const skippedFiles = [];
+    let fullContents;
     for (const [filename, fileContent, fileDiff] of filesAndChanges) {
         if (options.maxFiles <= 0 || summaryPromises.length < options.maxFiles) {
             summaryPromises.push(openaiConcurrencyLimit(async () => await doSummary(filename, fileContent, fileDiff)));
+            fullContents = fileContent;
         }
         else {
             skippedFiles.push(filename);
@@ -20525,7 +20527,12 @@ ${filename}: ${summary}
                 (0,core.warning)('summarize: nothing obtained from openai');
             }
             else {
-                inputs.rawSummary = summarizeResp;
+                if (filesAndChanges.length === 1 && fullContents) {
+                    inputs.rawSummary = fullContents;
+                }
+                else {
+                    inputs.rawSummary = summarizeResp;
+                }
             }
         }
     }

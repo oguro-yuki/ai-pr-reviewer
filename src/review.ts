@@ -372,6 +372,7 @@ ${
 
   const summaryPromises = []
   const skippedFiles = []
+  let fullContents
   for (const [filename, fileContent, fileDiff] of filesAndChanges) {
     if (options.maxFiles <= 0 || summaryPromises.length < options.maxFiles) {
       summaryPromises.push(
@@ -379,6 +380,7 @@ ${
           async () => await doSummary(filename, fileContent, fileDiff)
         )
       )
+      fullContents = fileContent
     } else {
       skippedFiles.push(filename)
     }
@@ -406,7 +408,11 @@ ${filename}: ${summary}
       if (summarizeResp === '') {
         warning('summarize: nothing obtained from openai')
       } else {
-        inputs.rawSummary = summarizeResp
+        if (filesAndChanges.length === 1 && fullContents) {
+          inputs.rawSummary = fullContents
+        } else {
+          inputs.rawSummary = summarizeResp
+        }
       }
     }
   }
