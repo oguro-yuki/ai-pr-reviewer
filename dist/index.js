@@ -20538,6 +20538,7 @@ ${filename}: ${summary}
                 }
                 else {
                     (0,core.info)('summarize to summarizeResp');
+                    (0,core.info)(`summarizeResp is ${summarizeResp}`);
                     inputs.rawSummary = summarizeResp;
                 }
             }

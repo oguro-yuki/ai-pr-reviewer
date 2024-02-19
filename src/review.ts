@@ -418,6 +418,7 @@ ${filename}: ${summary}
           inputs.rawSummary = fullContents
         } else {
           info('summarize to summarizeResp')
+          info(`summarizeResp is ${summarizeResp}`)
           inputs.rawSummary = summarizeResp
         }
       }
