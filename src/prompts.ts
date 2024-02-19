@@ -51,9 +51,9 @@ changesets using the same format as the input.
 $raw_summary
 `
 
-  summarizePrefix = `Here is the summary of changes you have generated for files:
+  summarizePrefix = `以下はMVPキャンパスの内容です:
       \`\`\`
-      $raw_summary
+      $file_content
       \`\`\`
 
 `
