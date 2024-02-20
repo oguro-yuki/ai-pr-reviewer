@@ -17628,8 +17628,8 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony import */ var _bot__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5517);
 /* harmony import */ var _options__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(8870);
 /* harmony import */ var _prompts__WEBPACK_IMPORTED_MODULE_5__ = __nccwpck_require__(4272);
-/* harmony import */ var _review__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(2612);
-/* harmony import */ var _review_comment__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(5947);
+/* harmony import */ var _review__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(3798);
+/* harmony import */ var _retry_review__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(8020);
 
 
 
@@ -17665,7 +17665,7 @@ async function run() {
             await (0,_review__WEBPACK_IMPORTED_MODULE_3__/* .codeReview */ .z)(lightBot, heavyBot, options, prompts);
         }
         else if (process.env.GITHUB_EVENT_NAME === 'pull_request_review_comment') {
-            await (0,_review_comment__WEBPACK_IMPORTED_MODULE_4__/* .handleReviewComment */ .V)(heavyBot, options, prompts);
+            await (0,_retry_review__WEBPACK_IMPORTED_MODULE_4__/* .retryReview */ .$)(heavyBot, options, prompts);
         }
         else {
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)('Skipped: this action only works on push events or pull_request');
@@ -19946,24 +19946,22 @@ $comment
 
 /***/ }),
 
-/***/ 5947:
+/***/ 8020:
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
 "use strict";
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
-/* harmony export */   "V": () => (/* binding */ handleReviewComment)
+/* harmony export */   "$": () => (/* binding */ retryReview)
 /* harmony export */ });
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5438);
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_github__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _commenter__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(3339);
-/* harmony import */ var _inputs__WEBPACK_IMPORTED_MODULE_5__ = __nccwpck_require__(6180);
+/* harmony import */ var _inputs__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(6180);
 /* harmony import */ var _octokit__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(3258);
-/* harmony import */ var _tokenizer__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(652);
 
 // eslint-disable-next-line camelcase
-
 
 
 
@@ -19972,9 +19970,10 @@ $comment
 const context = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context;
 const repo = context.repo;
 const ASK_BOT = '@coderabbitai';
-const handleReviewComment = async (heavyBot, options, prompts) => {
+const REVIEW_MENTION = '@review-ai';
+const retryReview = async (heavyBot, options, prompts) => {
     const commenter = new _commenter__WEBPACK_IMPORTED_MODULE_2__/* .Commenter */ .Es();
-    const inputs = new _inputs__WEBPACK_IMPORTED_MODULE_5__/* .Inputs */ .k();
+    const inputs = new _inputs__WEBPACK_IMPORTED_MODULE_4__/* .Inputs */ .k();
     if (context.eventName !== 'pull_request_review_comment') {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Skipped: ${context.eventName} is not a pull_request_review_comment event`);
         return;
@@ -20004,87 +20003,21 @@ const handleReviewComment = async (heavyBot, options, prompts) => {
     }
     // Check if the comment is not from the bot itself
     if (!comment.body.includes(_commenter__WEBPACK_IMPORTED_MODULE_2__/* .COMMENT_TAG */ .Rs) &&
-        !comment.body.includes(_commenter__WEBPACK_IMPORTED_MODULE_2__/* .COMMENT_REPLY_TAG */ .aD)) {
+        !comment.body.includes(_commenter__WEBPACK_IMPORTED_MODULE_2__/* .COMMENT_REPLY_TAG */ .aD) &&
+        comment.body.includes(REVIEW_MENTION)) {
         const pullNumber = context.payload.pull_request.number;
-        inputs.comment = `${comment.user.login}: ${comment.body}`;
-        inputs.diff = comment.diff_hunk;
-        inputs.filename = comment.path;
-        const { chain: commentChain, topLevelComment } = await commenter.getCommentChain(pullNumber, comment);
-        if (!topLevelComment) {
-            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)('Failed to find the top-level comment to reply to');
+        const fullContents = await (0,_octokit__WEBPACK_IMPORTED_MODULE_3__/* .getPRFile */ .f)(context.repo.owner, context.repo.repo, pullNumber);
+        if (!fullContents) {
+            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Skipped: file count is not one.`);
             return;
         }
-        inputs.commentChain = commentChain;
-        // check whether this chain contains replies from the bot
-        if (commentChain.includes(_commenter__WEBPACK_IMPORTED_MODULE_2__/* .COMMENT_TAG */ .Rs) ||
-            commentChain.includes(_commenter__WEBPACK_IMPORTED_MODULE_2__/* .COMMENT_REPLY_TAG */ .aD) ||
-            comment.body.includes(ASK_BOT)) {
-            let fileDiff = '';
-            try {
-                // get diff for this file by comparing the base and head commits
-                const diffAll = await _octokit__WEBPACK_IMPORTED_MODULE_3__/* .octokit.repos.compareCommits */ .K.repos.compareCommits({
-                    owner: repo.owner,
-                    repo: repo.repo,
-                    base: context.payload.pull_request.base.sha,
-                    head: context.payload.pull_request.head.sha
-                });
-                if (diffAll.data) {
-                    const files = diffAll.data.files;
-                    if (files != null) {
-                        const file = files.find(f => f.filename === comment.path);
-                        if (file != null && file.patch) {
-                            fileDiff = file.patch;
-                        }
-                    }
-                }
-            }
-            catch (error) {
-                (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Failed to get file diff: ${error}, skipping.`);
-            }
-            // use file diff if no diff was found in the comment
-            if (inputs.diff.length === 0) {
-                if (fileDiff.length > 0) {
-                    inputs.diff = fileDiff;
-                    fileDiff = '';
-                }
-                else {
-                    await commenter.reviewCommentReply(pullNumber, topLevelComment, 'Cannot reply to this comment as diff could not be found.');
-                    return;
-                }
-            }
-            // get tokens so far
-            let tokens = (0,_tokenizer__WEBPACK_IMPORTED_MODULE_4__/* .getTokenCount */ .V)(prompts.renderComment(inputs));
-            if (tokens > options.heavyTokenLimits.requestTokens) {
-                await commenter.reviewCommentReply(pullNumber, topLevelComment, 'Cannot reply to this comment as diff being commented is too large and exceeds the token limit.');
-                return;
-            }
-            // pack file diff into the inputs if they are not too long
-            if (fileDiff.length > 0) {
-                // count occurrences of $file_diff in prompt
-                const fileDiffCount = prompts.comment.split('$file_diff').length - 1;
-                const fileDiffTokens = (0,_tokenizer__WEBPACK_IMPORTED_MODULE_4__/* .getTokenCount */ .V)(fileDiff);
-                if (fileDiffCount > 0 &&
-                    tokens + fileDiffTokens * fileDiffCount <=
-                        options.heavyTokenLimits.requestTokens) {
-                    tokens += fileDiffTokens * fileDiffCount;
-                    inputs.fileDiff = fileDiff;
-                }
-            }
-            // get summary of the PR
-            const summary = await commenter.findCommentWithTag(_commenter__WEBPACK_IMPORTED_MODULE_2__/* .SUMMARIZE_TAG */ .Rp, pullNumber);
-            if (summary) {
-                // pack short summary into the inputs if it is not too long
-                const shortSummary = commenter.getShortSummary(summary.body);
-                const shortSummaryTokens = (0,_tokenizer__WEBPACK_IMPORTED_MODULE_4__/* .getTokenCount */ .V)(shortSummary);
-                if (tokens + shortSummaryTokens <=
-                    options.heavyTokenLimits.requestTokens) {
-                    tokens += shortSummaryTokens;
-                    inputs.shortSummary = shortSummary;
-                }
-            }
-            const [reply] = await heavyBot.chat(prompts.renderComment(inputs));
-            await commenter.reviewCommentReply(pullNumber, topLevelComment, reply);
+        inputs.rawSummary = fullContents;
+        const reviewResponse = await heavyBot.chat(prompts.renderSummarize(inputs));
+        if (reviewResponse === '') {
+            (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)('summarize: nothing obtained from openai');
         }
+        let summarizeComment = `${reviewResponse}`;
+        await commenter.comment(`${summarizeComment}`, _commenter__WEBPACK_IMPORTED_MODULE_2__/* .COMMENT_TAG */ .Rs, 'create');
     }
     else {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`Skipped: ${context.eventName} event is from the bot itself`);
@@ -20094,7 +20027,7 @@ const handleReviewComment = async (heavyBot, options, prompts) => {
 
 /***/ }),
 
-/***/ 2612:
+/***/ 3798:
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
 "use strict";
@@ -20253,8 +20186,20 @@ var lib_commenter = __nccwpck_require__(3339);
 var lib_inputs = __nccwpck_require__(6180);
 // EXTERNAL MODULE: ./lib/octokit.js
 var octokit = __nccwpck_require__(3258);
-// EXTERNAL MODULE: ./lib/tokenizer.js
-var tokenizer = __nccwpck_require__(652);
+// EXTERNAL MODULE: ./node_modules/@dqbd/tiktoken/tiktoken.cjs
+var tiktoken = __nccwpck_require__(3171);
+;// CONCATENATED MODULE: ./lib/tokenizer.js
+// eslint-disable-next-line camelcase
+
+const tokenizer = (0,tiktoken/* get_encoding */.iw)('cl100k_base');
+function encode(input) {
+    return tokenizer.encode(input);
+}
+function getTokenCount(input) {
+    input = input.replace(/<\|endoftext\|>/g, '');
+    return encode(input).length;
+}
+
 ;// CONCATENATED MODULE: ./lib/review.js
 
 // eslint-disable-next-line camelcase
@@ -20478,7 +20423,7 @@ ${filterIgnoredFiles.length > 0
         ins.fileDiff = fileDiff;
         // render prompt based on inputs so far
         const summarizePrompt = prompts.renderSummarizeFileDiff(ins, options.reviewSimpleChanges);
-        const tokens = (0,tokenizer/* getTokenCount */.V)(summarizePrompt);
+        const tokens = getTokenCount(summarizePrompt);
         if (tokens > options.lightTokenLimits.requestTokens) {
             (0,core.info)(`summarize: diff tokens exceeds limit, skip ${filename}`);
             summariesFailed.push(`${filename} (diff tokens exceeds limit)`);
@@ -20647,11 +20592,11 @@ ${summariesFailed.length > 0
             const ins = inputs.clone();
             ins.filename = filename;
             // calculate tokens based on inputs so far
-            let tokens = (0,tokenizer/* getTokenCount */.V)(prompts.renderReviewFileDiff(ins));
+            let tokens = getTokenCount(prompts.renderReviewFileDiff(ins));
             // loop to calculate total patch tokens
             let patchesToPack = 0;
             for (const [, , patch] of patches) {
-                const patchTokens = (0,tokenizer/* getTokenCount */.V)(patch);
+                const patchTokens = getTokenCount(patch);
                 if (tokens + patchTokens > options.heavyTokenLimits.requestTokens) {
                     (0,core.info)(`only packing ${patchesToPack} / ${patches.length} patches, tokens: ${tokens} / ${options.heavyTokenLimits.requestTokens}`);
                     break;
@@ -20686,7 +20631,7 @@ ${summariesFailed.length > 0
                     (0,core.warning)(`Failed to get comments: ${e}, skipping. backtrace: ${e.stack}`);
                 }
                 // try packing comment_chain into this request
-                const commentChainTokens = (0,tokenizer/* getTokenCount */.V)(commentChain);
+                const commentChainTokens = getTokenCount(commentChain);
                 if (tokens + commentChainTokens >
                     options.heavyTokenLimits.requestTokens) {
                     commentChain = '';
@@ -21017,29 +20962,6 @@ ${review.comment}`;
     }
     storeReview();
     return reviews;
-}
-
-
-/***/ }),
-
-/***/ 652:
-/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
-
-"use strict";
-/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
-/* harmony export */   "V": () => (/* binding */ getTokenCount)
-/* harmony export */ });
-/* unused harmony export encode */
-/* harmony import */ var _dqbd_tiktoken__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(3171);
-// eslint-disable-next-line camelcase
-
-const tokenizer = (0,_dqbd_tiktoken__WEBPACK_IMPORTED_MODULE_0__/* .get_encoding */ .iw)('cl100k_base');
-function encode(input) {
-    return tokenizer.encode(input);
-}
-function getTokenCount(input) {
-    input = input.replace(/<\|endoftext\|>/g, '');
-    return encode(input).length;
 }
 
 

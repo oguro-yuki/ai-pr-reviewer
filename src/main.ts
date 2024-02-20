@@ -10,6 +10,7 @@ import {OpenAIOptions, Options} from './options'
 import {Prompts} from './prompts'
 import {codeReview} from './review'
 import {handleReviewComment} from './review-comment'
+import { retryReview } from './retry-review'
 
 async function run(): Promise<void> {
   const options: Options = new Options(
@@ -77,7 +78,7 @@ async function run(): Promise<void> {
     } else if (
       process.env.GITHUB_EVENT_NAME === 'pull_request_review_comment'
     ) {
-      await handleReviewComment(heavyBot, options, prompts)
+      await retryReview(heavyBot, options, prompts)
     } else {
       warning('Skipped: this action only works on push events or pull_request')
     }
