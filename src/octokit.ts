@@ -43,3 +43,27 @@ Retry count: ${retryCount}
     }
   }
 })
+
+
+export async function getPRFile(owner: string, repo: string, pull_number: number) {
+  // プルリクエストに含まれる全ファイルのリストを取得
+  const { data: files } = await octokit.pulls.listFiles({
+    owner,
+    repo,
+    pull_number
+  });
+
+  // 変更ファイルが複数ある場合は複数で要約するため、ファイル全文を使ったレビューをしない
+  if (files.length > 1) {
+    return null
+  }
+
+  const { data: blob } = await octokit.git.getBlob({
+    owner,
+    repo,
+    file_sha: files[0].sha,
+  });
+
+  // ファイルの内容を返却
+  return blob.content
+}

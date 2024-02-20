@@ -13,7 +13,7 @@ import {
   SUMMARIZE_TAG
 } from './commenter'
 import {Inputs} from './inputs'
-import {octokit} from './octokit'
+import {getPRFile, octokit} from './octokit'
 import {type Options} from './options'
 import {type Prompts} from './prompts'
 import {getTokenCount} from './tokenizer'
@@ -373,7 +373,6 @@ ${
 
   const summaryPromises = []
   const skippedFiles = []
-  let fullContents
   for (const [filename, fileContent, fileDiff] of filesAndChanges) {
     if (options.maxFiles <= 0 || summaryPromises.length < options.maxFiles) {
       summaryPromises.push(
@@ -381,7 +380,6 @@ ${
           async () => await doSummary(filename, fileContent, fileDiff)
         )
       )
-      fullContents = fileContent
     } else {
       info(`${filename} is skipped`)
       skippedFiles.push(filename)
@@ -411,9 +409,8 @@ ${filename}: ${summary}
       if (summarizeResp === '') {
         warning('summarize: nothing obtained from openai')
       } else {
-        info(`filesAndChanges size is ${filesAndChanges.length}`)
-        info(`fullContents is ${!fullContents}`)
-        if (filesAndChanges.length === 1 && fullContents) {
+        const fullContents = await getPRFile(repo.owner, repo.repo, context.payload.pull_request.number)
+        if (fullContents) {
           info('summarize to fullContents')
           inputs.rawSummary = fullContents
         } else {

@@ -17699,7 +17699,8 @@ __webpack_async_result__();
 
 "use strict";
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
-/* harmony export */   "K": () => (/* binding */ octokit)
+/* harmony export */   "K": () => (/* binding */ octokit),
+/* harmony export */   "f": () => (/* binding */ getPRFile)
 /* harmony export */ });
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
@@ -17739,6 +17740,25 @@ Retry count: ${retryCount}
         }
     }
 });
+async function getPRFile(owner, repo, pull_number) {
+    // プルリクエストに含まれる全ファイルのリストを取得
+    const { data: files } = await octokit.pulls.listFiles({
+        owner,
+        repo,
+        pull_number
+    });
+    // 変更ファイルが複数ある場合は複数で要約するため、ファイル全文を使ったレビューをしない
+    if (files.length > 1) {
+        return null;
+    }
+    const { data: blob } = await octokit.git.getBlob({
+        owner,
+        repo,
+        file_sha: files[0].sha,
+    });
+    // ファイルの内容を返却
+    return blob.content;
+}
 
 
 /***/ }),
@@ -20500,11 +20520,9 @@ ${filterIgnoredFiles.length > 0
     };
     const summaryPromises = [];
     const skippedFiles = [];
-    let fullContents;
     for (const [filename, fileContent, fileDiff] of filesAndChanges) {
         if (options.maxFiles <= 0 || summaryPromises.length < options.maxFiles) {
             summaryPromises.push(openaiConcurrencyLimit(async () => await doSummary(filename, fileContent, fileDiff)));
-            fullContents = fileContent;
         }
         else {
             (0,core.info)(`${filename} is skipped`);
@@ -20530,9 +20548,8 @@ ${filename}: ${summary}
                 (0,core.warning)('summarize: nothing obtained from openai');
             }
             else {
-                (0,core.info)(`filesAndChanges size is ${filesAndChanges.length}`);
-                (0,core.info)(`fullContents is ${!fullContents}`);
-                if (filesAndChanges.length === 1 && fullContents) {
+                const fullContents = await (0,octokit/* getPRFile */.f)(repo.owner, repo.repo, context.payload.pull_request.number);
+                if (fullContents) {
                     (0,core.info)('summarize to fullContents');
                     inputs.rawSummary = fullContents;
                 }
