@@ -17756,8 +17756,8 @@ async function getPRFile(owner, repo, pull_number) {
         repo,
         file_sha: files[0].sha,
     });
-    // ファイルの内容を返却
-    return blob.content;
+    // ファイルの内容をデコードして返却
+    return Buffer.from(blob.content, 'base64').toString('utf-8');
 }
 
 
