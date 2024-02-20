@@ -679,20 +679,21 @@ ${commentChain}
       }
     }
 
-    const reviewPromises = []
-    for (const [filename, fileContent, , patches] of filesAndChangesReview) {
-      if (options.maxFiles <= 0 || reviewPromises.length < options.maxFiles) {
-        reviewPromises.push(
-          openaiConcurrencyLimit(async () => {
-            await doReview(filename, fileContent, patches)
-          })
-        )
-      } else {
-        skippedFiles.push(filename)
-      }
-    }
+    // MVPキャンパスでは個別ブロックでのレビューは不要のため、コメントアウト
+    // const reviewPromises = []
+    // for (const [filename, fileContent, , patches] of filesAndChangesReview) {
+    //   if (options.maxFiles <= 0 || reviewPromises.length < options.maxFiles) {
+    //     reviewPromises.push(
+    //       openaiConcurrencyLimit(async () => {
+    //         await doReview(filename, fileContent, patches)
+    //       })
+    //     )
+    //   } else {
+    //     skippedFiles.push(filename)
+    //   }
+    // }
 
-    await Promise.all(reviewPromises)
+    // await Promise.all(reviewPromises)
 
     statusMsg += `
 ${
