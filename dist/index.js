@@ -19987,14 +19987,14 @@ const retryReview = async (heavyBot, options, prompts) => {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Skipped: ${context.eventName} event is missing comment`);
         return;
     }
-    if (context.payload.pull_request == null ||
-        context.payload.repository == null) {
+    if (context.payload.issue?.pull_request == null ||
+        context.payload.issue.repository == null) {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Skipped: ${context.eventName} event is missing pull_request`);
         return;
     }
-    inputs.title = context.payload.pull_request.title;
-    if (context.payload.pull_request.body) {
-        inputs.description = commenter.getDescription(context.payload.pull_request.body);
+    inputs.title = context.payload.issue.pull_request.title;
+    if (context.payload.issue.pull_request.body) {
+        inputs.description = commenter.getDescription(context.payload.issue.pull_request.body);
     }
     // check if the comment was created and not edited or deleted
     if (context.payload.action !== 'created') {
@@ -20005,7 +20005,7 @@ const retryReview = async (heavyBot, options, prompts) => {
     if (!comment.body.includes(_commenter__WEBPACK_IMPORTED_MODULE_2__/* .COMMENT_TAG */ .Rs) &&
         !comment.body.includes(_commenter__WEBPACK_IMPORTED_MODULE_2__/* .COMMENT_REPLY_TAG */ .aD) &&
         comment.body.includes(REVIEW_MENTION)) {
-        const pullNumber = context.payload.pull_request.number;
+        const pullNumber = context.payload.issue.pull_request.number;
         const fullContents = await (0,_octokit__WEBPACK_IMPORTED_MODULE_3__/* .getPRFile */ .f)(context.repo.owner, context.repo.repo, pullNumber);
         if (!fullContents) {
             (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Skipped: file count is not one.`);

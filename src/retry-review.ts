@@ -44,16 +44,16 @@ export const retryReview = async (
     return
   }
   if (
-    context.payload.pull_request == null ||
-    context.payload.repository == null
+    context.payload.issue?.pull_request == null ||
+    context.payload.issue.repository == null
   ) {
     warning(`Skipped: ${context.eventName} event is missing pull_request`)
     return
   }
-  inputs.title = context.payload.pull_request.title
-  if (context.payload.pull_request.body) {
+  inputs.title = context.payload.issue.pull_request.title
+  if (context.payload.issue.pull_request.body) {
     inputs.description = commenter.getDescription(
-      context.payload.pull_request.body
+      context.payload.issue.pull_request.body
     )
   }
 
@@ -69,7 +69,7 @@ export const retryReview = async (
     !comment.body.includes(COMMENT_REPLY_TAG) &&
     comment.body.includes(REVIEW_MENTION)
   ) {
-    const pullNumber = context.payload.pull_request.number
+    const pullNumber = context.payload.issue.pull_request.number
 
     const fullContents = await getPRFile(context.repo.owner, context.repo.repo, pullNumber)
     if (!fullContents) {
