@@ -8,7 +8,7 @@ import {
   Commenter
 } from './commenter'
 import { Inputs } from './inputs'
-import { getPRFile } from './octokit'
+import { getPRFile, octokit } from './octokit'
 import { type Options } from './options'
 import { type Prompts } from './prompts'
 
@@ -38,24 +38,34 @@ export const retryReview = async (
     return
   }
 
-  const prNumber = context.payload.issue?.number;
-  info(`prNumber is ${prNumber}`)
+
   const comment = context.payload.comment
   if (comment == null) {
     warning(`Skipped: ${context.eventName} event is missing comment`)
     return
   }
+
+  const prNumber = context.payload.issue?.number;
+  if(!prNumber) {
+    warning(`Skipped: ${context.eventName} event is missing pull_request number`)
+    return
+  }
+  const { data: pullRequest } = await octokit.pulls.get({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    pull_number: prNumber,
+  });
+
   if (
-    context.payload.issue?.pull_request == null ||
-    context.payload.issue.repository == null
+    pullRequest == null
   ) {
     warning(`Skipped: ${context.eventName} event is missing pull_request`)
     return
   }
-  inputs.title = context.payload.issue.pull_request.title
-  if (context.payload.issue.pull_request.body) {
+  inputs.title = pullRequest.title
+  if (pullRequest.body) {
     inputs.description = commenter.getDescription(
-      context.payload.issue.pull_request.body
+      pullRequest.body
     )
   }
 
@@ -71,7 +81,7 @@ export const retryReview = async (
     !comment.body.includes(COMMENT_REPLY_TAG) &&
     comment.body.includes(REVIEW_MENTION)
   ) {
-    const pullNumber = context.payload.issue.pull_request.number
+    const pullNumber = pullRequest.number
 
     const fullContents = await getPRFile(context.repo.owner, context.repo.repo, pullNumber)
     if (!fullContents) {
