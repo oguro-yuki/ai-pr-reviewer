@@ -19982,6 +19982,8 @@ const retryReview = async (heavyBot, options, prompts) => {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Skipped: ${context.eventName} event is missing payload`);
         return;
     }
+    const prNumber = context.payload.issue?.number;
+    (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.info)(`prNumber is ${prNumber}`);
     const comment = context.payload.comment;
     if (comment == null) {
         (0,_actions_core__WEBPACK_IMPORTED_MODULE_0__.warning)(`Skipped: ${context.eventName} event is missing comment`);

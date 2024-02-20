@@ -38,6 +38,8 @@ export const retryReview = async (
     return
   }
 
+  const prNumber = context.payload.issue?.number;
+  info(`prNumber is ${prNumber}`)
   const comment = context.payload.comment
   if (comment == null) {
     warning(`Skipped: ${context.eventName} event is missing comment`)
