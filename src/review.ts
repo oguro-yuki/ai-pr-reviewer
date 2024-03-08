@@ -337,7 +337,7 @@ ${
 
     // summarize content
     try {
-      const [summarizeResp] = await lightBot.chat(summarizePrompt)
+      const summarizeResp = await lightBot.chat(summarizePrompt)
 
       if (summarizeResp === '') {
         info('summarize: nothing obtained from openai')
@@ -615,7 +615,7 @@ ${commentChain}
       if (patchesPacked > 0) {
         // perform review
         try {
-          const [response] = await heavyBot.chat(
+          const response = await heavyBot.chat(
             prompts.renderReviewFileDiff(ins)
           )
           if (!response) {
