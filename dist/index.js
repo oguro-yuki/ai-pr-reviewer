@@ -19257,6 +19257,7 @@ ${filterIgnoredFiles.length > 0
             return null;
         }
     };
+    (0,core.info)(`filesAndChanges size is ${filesAndChanges.length}`);
     const summaryPromises = [];
     const skippedFiles = [];
     for (const [filename, fileContent, fileDiff] of filesAndChanges) {
@@ -19268,6 +19269,7 @@ ${filterIgnoredFiles.length > 0
         }
     }
     const summaries = (await Promise.all(summaryPromises)).filter(summary => summary !== null);
+    (0,core.info)(`summaries size is ${summaries.length}`);
     if (summaries.length > 0) {
         const batchSize = 10;
         // join summaries into one in the batches of batchSize

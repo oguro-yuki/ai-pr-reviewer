@@ -370,6 +370,7 @@ ${
     }
   }
 
+  info(`filesAndChanges size is ${filesAndChanges.length}`)
   const summaryPromises = []
   const skippedFiles = []
   for (const [filename, fileContent, fileDiff] of filesAndChanges) {
@@ -388,6 +389,7 @@ ${
     summary => summary !== null
   ) as Array<[string, string, boolean]>
 
+  info(`summaries size is ${summaries.length}`)
   if (summaries.length > 0) {
     const batchSize = 10
     // join summaries into one in the batches of batchSize
