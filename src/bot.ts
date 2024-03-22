@@ -18,7 +18,6 @@ export class Bot {
   private readonly model: ChatOpenAI | null = null
 
   private readonly options: Options
-  private readonly MAX_RETRIES = 4;
 
   constructor(options: Options, openaiOptions: OpenAIOptions) {
     this.options = options
@@ -79,16 +78,10 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
     let response: ChainValues | undefined
 
     if (this.api != null) {
-      let retries = 0;
-      while (retries < this.MAX_RETRIES) {
-        try {
-          response = await this.api.call({input: message})
-        } catch (e) {
-          retries++;
-          // リトライ回数×10秒待つ
-          await new Promise(resolve => setTimeout(resolve, 10000 * retries));
-          info(`response: ${response}, failed to send message to openai: ${e}`)
-        }
+      try {
+        response = await this.api.call({input: message})
+      } catch (e) {
+        info(`response: ${response}, failed to send message to openai: ${e}`)
       }
       const end = Date.now()
       info(`response: ${JSON.stringify(response)}`)

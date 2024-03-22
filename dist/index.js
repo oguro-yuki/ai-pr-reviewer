@@ -15525,7 +15525,6 @@ class Bot {
     api = null;
     model = null;
     options;
-    MAX_RETRIES = 4;
     constructor(options, openaiOptions) {
         this.options = options;
         if (process.env.OPENAI_API_KEY) {
@@ -15578,17 +15577,11 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
         }
         let response;
         if (this.api != null) {
-            let retries = 0;
-            while (retries < this.MAX_RETRIES) {
-                try {
-                    response = await this.api.call({ input: message });
-                }
-                catch (e) {
-                    retries++;
-                    // リトライ回数×10秒待つ
-                    await new Promise(resolve => setTimeout(resolve, 10000 * retries));
-                    (0,core.info)(`response: ${response}, failed to send message to openai: ${e}`);
-                }
+            try {
+                response = await this.api.call({ input: message });
+            }
+            catch (e) {
+                (0,core.info)(`response: ${response}, failed to send message to openai: ${e}`);
             }
             const end = Date.now();
             (0,core.info)(`response: ${JSON.stringify(response)}`);
