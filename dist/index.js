@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 5517:
+/***/ 446:
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
 "use strict";
@@ -2206,7 +2206,7 @@ var prompts_prompt = __nccwpck_require__(3379);
  * executions of a Chain and inject that information into the inputs of
  * future executions of the Chain.
  */
-class memory_BaseMemory {
+class BaseMemory {
 }
 const getValue = (values, key) => {
     if (key !== undefined) {
@@ -2222,7 +2222,7 @@ const getValue = (values, key) => {
  * to use for the memory. If there is only one input value, it is used.
  * If there are multiple input values, the inputKey must be specified.
  */
-const memory_getInputValue = (inputValues, inputKey) => {
+const getInputValue = (inputValues, inputKey) => {
     const value = getValue(inputValues, inputKey);
     if (!value) {
         const keys = Object.keys(inputValues);
@@ -2236,7 +2236,7 @@ const memory_getInputValue = (inputValues, inputKey) => {
  * If there are multiple output values, the outputKey must be specified.
  * If no outputKey is specified, an error is thrown.
  */
-const memory_getOutputValue = (outputValues, outputKey) => {
+const getOutputValue = (outputValues, outputKey) => {
     const value = getValue(outputValues, outputKey);
     if (!value) {
         const keys = Object.keys(outputValues);
@@ -2249,7 +2249,7 @@ const memory_getOutputValue = (outputValues, outputKey) => {
  * excluding any keys that are memory variables or the "stop" key. If
  * there is not exactly one prompt input key, an error is thrown.
  */
-function memory_getPromptInputKey(inputs, memoryVariables) {
+function getPromptInputKey(inputs, memoryVariables) {
     const promptInputKeys = Object.keys(inputs).filter((key) => !memoryVariables.includes(key) && key !== "stop");
     if (promptInputKeys.length !== 1) {
         throw new Error(`One input key expected, but got ${promptInputKeys.length}`);
@@ -2325,7 +2325,7 @@ class ChatMessageHistory extends schema/* BaseListChatMessageHistory */.oV {
  * specifically the history of a conversation. This class is typically
  * extended by other classes to create specific types of memory systems.
  */
-class chat_memory_BaseChatMemory extends memory_BaseMemory {
+class BaseChatMemory extends BaseMemory {
     constructor(fields) {
         super();
         Object.defineProperty(this, "chatHistory", {
@@ -2365,8 +2365,8 @@ class chat_memory_BaseChatMemory extends memory_BaseMemory {
      */
     async saveContext(inputValues, outputValues) {
         // this is purposefully done in sequence so they're saved in order
-        await this.chatHistory.addUserMessage(memory_getInputValue(inputValues, this.inputKey));
-        await this.chatHistory.addAIChatMessage(memory_getOutputValue(outputValues, this.outputKey));
+        await this.chatHistory.addUserMessage(getInputValue(inputValues, this.inputKey));
+        await this.chatHistory.addAIChatMessage(getOutputValue(outputValues, this.outputKey));
     }
     /**
      * Method to clear the chat history.
@@ -2416,7 +2416,7 @@ class chat_memory_BaseChatMemory extends memory_BaseMemory {
  *
  * ```
  */
-class BufferMemory extends chat_memory_BaseChatMemory {
+class BufferMemory extends BaseChatMemory {
     constructor(fields) {
         super({
             chatHistory: fields?.chatHistory,
@@ -15509,1285 +15509,13 @@ async function createOpenAPIChain(spec, options = {}) {
 
 ;// CONCATENATED MODULE: ./node_modules/langchain/chains.js
 
+;// CONCATENATED MODULE: ./node_modules/langchain/chat_models/openai.js
+
 // EXTERNAL MODULE: ./node_modules/langchain/dist/prompts/index.js + 3 modules
 var prompts = __nccwpck_require__(4910);
 ;// CONCATENATED MODULE: ./node_modules/langchain/prompts.js
 
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/prompt.js
-
-const _DEFAULT_SUMMARIZER_TEMPLATE = `Progressively summarize the lines of conversation provided, adding onto the previous summary returning a new summary.
-
-EXAMPLE
-Current summary:
-The human asks what the AI thinks of artificial intelligence. The AI thinks artificial intelligence is a force for good.
-
-New lines of conversation:
-Human: Why do you think artificial intelligence is a force for good?
-AI: Because artificial intelligence will help humans reach their full potential.
-
-New summary:
-The human asks what the AI thinks of artificial intelligence. The AI thinks artificial intelligence is a force for good because it will help humans reach their full potential.
-END OF EXAMPLE
-
-Current summary:
-{summary}
-
-New lines of conversation:
-{new_lines}
-
-New summary:`;
-// eslint-disable-next-line spaced-comment
-const prompt_SUMMARY_PROMPT = /*#__PURE__*/ new prompts_prompt/* PromptTemplate */.P({
-    inputVariables: ["summary", "new_lines"],
-    template: _DEFAULT_SUMMARIZER_TEMPLATE,
-});
-const _DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE = `You are an assistant to a human, powered by a large language model trained by OpenAI.
-
-You are designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. As a language model, you are able to generate human-like text based on the input you receive, allowing you to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
-
-You are constantly learning and improving, and your capabilities are constantly evolving. You are able to process and understand large amounts of text, and can use this knowledge to provide accurate and informative responses to a wide range of questions. You have access to some personalized information provided by the human in the Context section below. Additionally, you are able to generate your own text based on the input you receive, allowing you to engage in discussions and provide explanations and descriptions on a wide range of topics.
-
-Overall, you are a powerful tool that can help with a wide range of tasks and provide valuable insights and information on a wide range of topics. Whether the human needs help with a specific question or just wants to have a conversation about a particular topic, you are here to assist.
-
-Context:
-{entities}
-
-Current conversation:
-{history}
-Last line:
-Human: {input}
-You:`;
-const ENTITY_MEMORY_CONVERSATION_TEMPLATE = 
-// eslint-disable-next-line spaced-comment
-/*#__PURE__*/ new prompts_prompt/* PromptTemplate */.P({
-    inputVariables: ["entities", "history", "input"],
-    template: _DEFAULT_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
-});
-const _DEFAULT_ENTITY_EXTRACTION_TEMPLATE = `You are an AI assistant reading the transcript of a conversation between an AI and a human. Extract all of the proper nouns from the last line of conversation. As a guideline, a proper noun is generally capitalized. You should definitely extract all names and places.
-
-The conversation history is provided just in case of a coreference (e.g. "What do you know about him" where "him" is defined in a previous line) -- ignore items mentioned there that are not in the last line.
-
-Return the output as a single comma-separated list, or NONE if there is nothing of note to return (e.g. the user is just issuing a greeting or having a simple conversation).
-
-EXAMPLE
-Conversation history:
-Person #1: my name is Jacob. how's it going today?
-AI: "It's going great! How about you?"
-Person #1: good! busy working on Langchain. lots to do.
-AI: "That sounds like a lot of work! What kind of things are you doing to make Langchain better?"
-Last line:
-Person #1: i'm trying to improve Langchain's interfaces, the UX, its integrations with various products the user might want ... a lot of stuff.
-Output: Jacob,Langchain
-END OF EXAMPLE
-
-EXAMPLE
-Conversation history:
-Person #1: how's it going today?
-AI: "It's going great! How about you?"
-Person #1: good! busy working on Langchain. lots to do.
-AI: "That sounds like a lot of work! What kind of things are you doing to make Langchain better?"
-Last line:
-Person #1: i'm trying to improve Langchain's interfaces, the UX, its integrations with various products the user might want ... a lot of stuff. I'm working with Person #2.
-Output: Langchain, Person #2
-END OF EXAMPLE
-
-Conversation history (for reference only):
-{history}
-Last line of conversation (for extraction):
-Human: {input}
-
-Output:`;
-// eslint-disable-next-line spaced-comment
-const prompt_ENTITY_EXTRACTION_PROMPT = /*#__PURE__*/ new prompts_prompt/* PromptTemplate */.P({
-    inputVariables: ["history", "input"],
-    template: _DEFAULT_ENTITY_EXTRACTION_TEMPLATE,
-});
-const _DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE = `You are an AI assistant helping a human keep track of facts about relevant people, places, and concepts in their life. Update and add to the summary of the provided entity in the "Entity" section based on the last line of your conversation with the human. If you are writing the summary for the first time, return a single sentence.
-The update should only include facts that are relayed in the last line of conversation about the provided entity, and should only contain facts about the provided entity.
-
-If there is no new information about the provided entity or the information is not worth noting (not an important or relevant fact to remember long-term), output the exact string "UNCHANGED" below.
-
-Full conversation history (for context):
-{history}
-
-Entity to summarize:
-{entity}
-
-Existing summary of {entity}:
-{summary}
-
-Last line of conversation:
-Human: {input}
-Updated summary (or the exact string "UNCHANGED" if there is no new information about {entity} above):`;
-// eslint-disable-next-line spaced-comment
-const prompt_ENTITY_SUMMARIZATION_PROMPT = /*#__PURE__*/ new prompts_prompt/* PromptTemplate */.P({
-    inputVariables: ["entity", "summary", "history", "input"],
-    template: _DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE,
-});
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/summary.js
-
-
-
-
-
-/**
- * Abstract class that provides a structure for storing and managing the
- * memory of a conversation. It includes methods for predicting a new
- * summary for the conversation given the existing messages and summary.
- */
-class summary_BaseConversationSummaryMemory extends (/* unused pure expression or super */ null && (BaseChatMemory)) {
-    constructor(fields) {
-        const { returnMessages, inputKey, outputKey, chatHistory, humanPrefix, aiPrefix, llm, prompt, summaryChatMessageClass, } = fields;
-        super({ returnMessages, inputKey, outputKey, chatHistory });
-        Object.defineProperty(this, "memoryKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "history"
-        });
-        Object.defineProperty(this, "humanPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "Human"
-        });
-        Object.defineProperty(this, "aiPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "AI"
-        });
-        Object.defineProperty(this, "llm", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "prompt", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: SUMMARY_PROMPT
-        });
-        Object.defineProperty(this, "summaryChatMessageClass", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: SystemMessage
-        });
-        this.memoryKey = fields?.memoryKey ?? this.memoryKey;
-        this.humanPrefix = humanPrefix ?? this.humanPrefix;
-        this.aiPrefix = aiPrefix ?? this.aiPrefix;
-        this.llm = llm;
-        this.prompt = prompt ?? this.prompt;
-        this.summaryChatMessageClass =
-            summaryChatMessageClass ?? this.summaryChatMessageClass;
-    }
-    /**
-     * Predicts a new summary for the conversation given the existing messages
-     * and summary.
-     * @param messages Existing messages in the conversation.
-     * @param existingSummary Current summary of the conversation.
-     * @returns A promise that resolves to a new summary string.
-     */
-    async predictNewSummary(messages, existingSummary) {
-        const newLines = getBufferString(messages, this.humanPrefix, this.aiPrefix);
-        const chain = new LLMChain({ llm: this.llm, prompt: this.prompt });
-        return await chain.predict({
-            summary: existingSummary,
-            new_lines: newLines,
-        });
-    }
-}
-/**
- * Class that provides a concrete implementation of the conversation
- * memory. It includes methods for loading memory variables, saving
- * context, and clearing the memory.
- * @example
- * ```typescript
- * const memory = new ConversationSummaryMemory({
- *   memoryKey: "chat_history",
- *   llm: new ChatOpenAI({ modelName: "gpt-3.5-turbo", temperature: 0 }),
- * });
- *
- * const model = new ChatOpenAI();
- * const prompt =
- *   PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
- *
- * Current conversation:
- * {chat_history}
- * Human: {input}
- * AI:`);
- * const chain = new LLMChain({ llm: model, prompt, memory });
- *
- * const res1 = await chain.call({ input: "Hi! I'm Jim." });
- * console.log({ res1, memory: await memory.loadMemoryVariables({}) });
- *
- * const res2 = await chain.call({ input: "What's my name?" });
- * console.log({ res2, memory: await memory.loadMemoryVariables({}) });
- *
- * ```
- */
-class ConversationSummaryMemory extends (/* unused pure expression or super */ null && (summary_BaseConversationSummaryMemory)) {
-    constructor(fields) {
-        super(fields);
-        Object.defineProperty(this, "buffer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ""
-        });
-    }
-    get memoryKeys() {
-        return [this.memoryKey];
-    }
-    /**
-     * Loads the memory variables for the conversation memory.
-     * @returns A promise that resolves to an object containing the memory variables.
-     */
-    async loadMemoryVariables(_) {
-        if (this.returnMessages) {
-            const result = {
-                [this.memoryKey]: [new this.summaryChatMessageClass(this.buffer)],
-            };
-            return result;
-        }
-        const result = { [this.memoryKey]: this.buffer };
-        return result;
-    }
-    /**
-     * Saves the context of the conversation memory.
-     * @param inputValues Input values for the conversation.
-     * @param outputValues Output values from the conversation.
-     * @returns A promise that resolves when the context has been saved.
-     */
-    async saveContext(inputValues, outputValues) {
-        await super.saveContext(inputValues, outputValues);
-        const messages = await this.chatHistory.getMessages();
-        this.buffer = await this.predictNewSummary(messages.slice(-2), this.buffer);
-    }
-    /**
-     * Clears the conversation memory.
-     * @returns A promise that resolves when the memory has been cleared.
-     */
-    async clear() {
-        await super.clear();
-        this.buffer = "";
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/buffer_window_memory.js
-
-
-/**
- * Class for managing and storing previous chat messages. It extends the
- * BaseChatMemory class and implements the BufferWindowMemoryInput
- * interface. This class is stateful and stores messages in a buffer. When
- * called in a chain, it returns all of the messages it has stored.
- * @example
- * ```typescript
- * const prompt =
- *   PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
- * Current conversation:
- * {chat_history}
- * Human: {input}
- * AI:`);
- *
- * const chain = new LLMChain({
- *   llm: new ChatOpenAI({ temperature: 0.9 }),
- *   prompt,
- *   memory: new BufferWindowMemory({ memoryKey: "chat_history", k: 1 }),
- * });
- *
- * // Example of initiating a conversation with the AI
- * const res1 = await chain.call({ input: "Hi! I'm Jim." });
- * console.log({ res1 });
- *
- * // Example of following up with another question
- * const res2 = await chain.call({ input: "What's my name?" });
- * console.log({ res2 });
- * ```
- */
-class BufferWindowMemory extends (/* unused pure expression or super */ null && (BaseChatMemory)) {
-    constructor(fields) {
-        super({
-            returnMessages: fields?.returnMessages ?? false,
-            chatHistory: fields?.chatHistory,
-            inputKey: fields?.inputKey,
-            outputKey: fields?.outputKey,
-        });
-        Object.defineProperty(this, "humanPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "Human"
-        });
-        Object.defineProperty(this, "aiPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "AI"
-        });
-        Object.defineProperty(this, "memoryKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "history"
-        });
-        Object.defineProperty(this, "k", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: 5
-        });
-        this.humanPrefix = fields?.humanPrefix ?? this.humanPrefix;
-        this.aiPrefix = fields?.aiPrefix ?? this.aiPrefix;
-        this.memoryKey = fields?.memoryKey ?? this.memoryKey;
-        this.k = fields?.k ?? this.k;
-    }
-    get memoryKeys() {
-        return [this.memoryKey];
-    }
-    /**
-     * Method to load the memory variables. Retrieves the chat messages from
-     * the history, slices the last 'k' messages, and stores them in the
-     * memory under the memoryKey. If the returnMessages property is set to
-     * true, the method returns the messages as they are. Otherwise, it
-     * returns a string representation of the messages.
-     * @param _values InputValues object.
-     * @returns Promise that resolves to a MemoryVariables object.
-     */
-    async loadMemoryVariables(_values) {
-        const messages = await this.chatHistory.getMessages();
-        if (this.returnMessages) {
-            const result = {
-                [this.memoryKey]: messages.slice(-this.k * 2),
-            };
-            return result;
-        }
-        const result = {
-            [this.memoryKey]: getBufferString(messages.slice(-this.k * 2), this.humanPrefix, this.aiPrefix),
-        };
-        return result;
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/motorhead_memory.js
-
-
-
-const MANAGED_URL = "https://api.getmetal.io/v1/motorhead";
-/**
- * Class for managing chat message memory using the Motorhead service. It
- * extends BaseChatMemory and includes methods for initializing the
- * memory, loading memory variables, and saving the context.
- */
-class MotorheadMemory extends (/* unused pure expression or super */ null && (BaseChatMemory)) {
-    constructor(fields) {
-        const { sessionId, url, memoryKey, timeout, returnMessages, inputKey, outputKey, chatHistory, apiKey, clientId, ...rest } = fields;
-        super({ returnMessages, inputKey, outputKey, chatHistory });
-        Object.defineProperty(this, "url", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: MANAGED_URL
-        });
-        Object.defineProperty(this, "timeout", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: 3000
-        });
-        Object.defineProperty(this, "memoryKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "history"
-        });
-        Object.defineProperty(this, "sessionId", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "context", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "caller", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        // Managed Params
-        Object.defineProperty(this, "apiKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "clientId", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        this.caller = new AsyncCaller(rest);
-        this.sessionId = sessionId;
-        this.url = url ?? this.url;
-        this.memoryKey = memoryKey ?? this.memoryKey;
-        this.timeout = timeout ?? this.timeout;
-        this.apiKey = apiKey;
-        this.clientId = clientId;
-    }
-    get memoryKeys() {
-        return [this.memoryKey];
-    }
-    _getHeaders() {
-        const isManaged = this.url === MANAGED_URL;
-        const headers = {
-            "Content-Type": "application/json",
-        };
-        if (isManaged && !(this.apiKey && this.clientId)) {
-            throw new Error("apiKey and clientId are required for managed motorhead. Visit https://getmetal.io to get your keys.");
-        }
-        if (isManaged && this.apiKey && this.clientId) {
-            headers["x-metal-api-key"] = this.apiKey;
-            headers["x-metal-client-id"] = this.clientId;
-        }
-        return headers;
-    }
-    /**
-     * Method that initializes the memory by fetching the session memory from
-     * the Motorhead service. It adds the messages to the chat history and
-     * sets the context if it is not 'NONE'.
-     */
-    async init() {
-        const res = await this.caller.call(fetch, `${this.url}/sessions/${this.sessionId}/memory`, {
-            signal: this.timeout ? AbortSignal.timeout(this.timeout) : undefined,
-            headers: this._getHeaders(),
-        });
-        const json = await res.json();
-        const data = json?.data || json; // Managed Motorhead returns { data: { messages: [], context: "NONE" } }
-        const { messages = [], context = "NONE" } = data;
-        await Promise.all(messages.reverse().map(async (message) => {
-            if (message.role === "AI") {
-                await this.chatHistory.addAIChatMessage(message.content);
-            }
-            else {
-                await this.chatHistory.addUserMessage(message.content);
-            }
-        }));
-        if (context && context !== "NONE") {
-            this.context = context;
-        }
-    }
-    /**
-     * Method that loads the memory variables. It gets the chat messages and
-     * returns them as a string or an array based on the returnMessages flag.
-     * @param _values The input values.
-     * @returns A promise that resolves with the memory variables.
-     */
-    async loadMemoryVariables(_values) {
-        const messages = await this.chatHistory.getMessages();
-        if (this.returnMessages) {
-            const result = {
-                [this.memoryKey]: messages,
-            };
-            return result;
-        }
-        const result = {
-            [this.memoryKey]: getBufferString(messages),
-        };
-        return result;
-    }
-    /**
-     * Method that saves the context to the Motorhead service and the base
-     * chat memory. It sends a POST request to the Motorhead service with the
-     * input and output messages, and calls the saveContext method of the base
-     * chat memory.
-     * @param inputValues The input values.
-     * @param outputValues The output values.
-     * @returns A promise that resolves when the context is saved.
-     */
-    async saveContext(inputValues, outputValues) {
-        const input = getInputValue(inputValues, this.inputKey);
-        const output = getOutputValue(outputValues, this.outputKey);
-        await Promise.all([
-            this.caller.call(fetch, `${this.url}/sessions/${this.sessionId}/memory`, {
-                signal: this.timeout ? AbortSignal.timeout(this.timeout) : undefined,
-                method: "POST",
-                body: JSON.stringify({
-                    messages: [
-                        { role: "Human", content: `${input}` },
-                        { role: "AI", content: `${output}` },
-                    ],
-                }),
-                headers: this._getHeaders(),
-            }),
-            super.saveContext(inputValues, outputValues),
-        ]);
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/vector_store.js
-
-
-
-/**
- * Class for managing long-term memory in Large Language Model (LLM)
- * applications. It provides a way to persist and retrieve relevant
- * documents from a vector store database, which can be useful for
- * maintaining conversation history or other types of memory in an LLM
- * application.
- * @example
- * ```typescript
- * const vectorStore = new MemoryVectorStore(new OpenAIEmbeddings());
- * const memory = new VectorStoreRetrieverMemory({
- *   vectorStoreRetriever: vectorStore.asRetriever(1),
- *   memoryKey: "history",
- * });
- *
- * // Saving context to memory
- * await memory.saveContext(
- *   { input: "My favorite food is pizza" },
- *   { output: "thats good to know" },
- * );
- * await memory.saveContext(
- *   { input: "My favorite sport is soccer" },
- *   { output: "..." },
- * );
- * await memory.saveContext({ input: "I don't the Celtics" }, { output: "ok" });
- *
- * // Loading memory variables
- * console.log(
- *   await memory.loadMemoryVariables({ prompt: "what sport should i watch?" }),
- * );
- * ```
- */
-class VectorStoreRetrieverMemory extends (/* unused pure expression or super */ null && (BaseMemory)) {
-    constructor(fields) {
-        super();
-        Object.defineProperty(this, "vectorStoreRetriever", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "inputKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "memoryKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "returnDocs", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        this.vectorStoreRetriever = fields.vectorStoreRetriever;
-        this.inputKey = fields.inputKey;
-        this.memoryKey = fields.memoryKey ?? "memory";
-        this.returnDocs = fields.returnDocs ?? false;
-    }
-    get memoryKeys() {
-        return [this.memoryKey];
-    }
-    /**
-     * Method to load memory variables. It uses the vectorStoreRetriever to
-     * get relevant documents based on the query obtained from the input
-     * values.
-     * @param values An InputValues object.
-     * @returns A Promise that resolves to a MemoryVariables object.
-     */
-    async loadMemoryVariables(values) {
-        const query = getInputValue(values, this.inputKey);
-        const results = await this.vectorStoreRetriever.getRelevantDocuments(query);
-        return {
-            [this.memoryKey]: this.returnDocs
-                ? results
-                : formatDocumentsAsString(results),
-        };
-    }
-    /**
-     * Method to save context. It constructs a document from the input and
-     * output values (excluding the memory key) and adds it to the vector
-     * store database using the vectorStoreRetriever.
-     * @param inputValues An InputValues object.
-     * @param outputValues An OutputValues object.
-     * @returns A Promise that resolves to void.
-     */
-    async saveContext(inputValues, outputValues) {
-        const text = Object.entries(inputValues)
-            .filter(([k]) => k !== this.memoryKey)
-            .concat(Object.entries(outputValues))
-            .map(([k, v]) => `${k}: ${v}`)
-            .join("\n");
-        await this.vectorStoreRetriever.addDocuments([
-            new Document({ pageContent: text }),
-        ]);
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/stores/entity/in_memory.js
-
-/**
- * An entity store that keeps data in memory. It extends from the
- * `BaseEntityStore` class and is used to store and manage entities.
- */
-class in_memory_InMemoryEntityStore extends (/* unused pure expression or super */ null && (BaseEntityStore)) {
-    constructor() {
-        super();
-        Object.defineProperty(this, "lc_namespace", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ["langchain", "stores", "entity", "in_memory"]
-        });
-        Object.defineProperty(this, "store", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        this.store = Object.create(null);
-    }
-    /**
-     * Retrieves the value associated with the given key from the store. If
-     * the key does not exist in the store, it returns the provided default
-     * value.
-     * @param key The key to retrieve the value for.
-     * @param defaultValue The default value to return if the key does not exist in the store.
-     * @returns The value associated with the key, or the default value if the key does not exist in the store.
-     */
-    async get(key, defaultValue) {
-        return key in this.store ? this.store[key] : defaultValue;
-    }
-    /**
-     * Sets the value associated with the given key in the store.
-     * @param key The key to set the value for.
-     * @param value The value to set.
-     */
-    async set(key, value) {
-        this.store[key] = value;
-    }
-    /**
-     * Removes the key and its associated value from the store.
-     * @param key The key to remove.
-     */
-    async delete(key) {
-        delete this.store[key];
-    }
-    /**
-     * Checks if a key exists in the store.
-     * @param key The key to check.
-     * @returns A boolean indicating whether the key exists in the store.
-     */
-    async exists(key) {
-        return key in this.store;
-    }
-    /**
-     * Removes all keys and their associated values from the store.
-     */
-    async clear() {
-        this.store = Object.create(null);
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/entity_memory.js
-
-
-
-
-
-// Entity extractor & summarizer to memory.
-/**
- * Class for managing entity extraction and summarization to memory in
- * chatbot applications. Extends the BaseChatMemory class and implements
- * the EntityMemoryInput interface.
- * @example
- * ```typescript
- * const memory = new EntityMemory({
- *   llm: new ChatOpenAI({ temperature: 0 }),
- *   chatHistoryKey: "history",
- *   entitiesKey: "entities",
- * });
- * const model = new ChatOpenAI({ temperature: 0.9 });
- * const chain = new LLMChain({
- *   llm: model,
- *   prompt: ENTITY_MEMORY_CONVERSATION_TEMPLATE,
- *   memory,
- * });
- *
- * const res1 = await chain.call({ input: "Hi! I'm Jim." });
- * console.log({
- *   res1,
- *   memory: await memory.loadMemoryVariables({ input: "Who is Jim?" }),
- * });
- *
- * const res2 = await chain.call({
- *   input: "I work in construction. What about you?",
- * });
- * console.log({
- *   res2,
- *   memory: await memory.loadMemoryVariables({ input: "Who is Jim?" }),
- * });
- *
- * ```
- */
-class EntityMemory extends (/* unused pure expression or super */ null && (BaseChatMemory)) {
-    constructor(fields) {
-        super({
-            chatHistory: fields.chatHistory,
-            returnMessages: fields.returnMessages ?? false,
-            inputKey: fields.inputKey,
-            outputKey: fields.outputKey,
-        });
-        Object.defineProperty(this, "entityExtractionChain", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "entitySummarizationChain", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "entityStore", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "entityCache", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        Object.defineProperty(this, "k", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: 3
-        });
-        Object.defineProperty(this, "chatHistoryKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "history"
-        });
-        Object.defineProperty(this, "llm", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "entitiesKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "entities"
-        });
-        Object.defineProperty(this, "humanPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "aiPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        this.llm = fields.llm;
-        this.humanPrefix = fields.humanPrefix;
-        this.aiPrefix = fields.aiPrefix;
-        this.chatHistoryKey = fields.chatHistoryKey ?? this.chatHistoryKey;
-        this.entitiesKey = fields.entitiesKey ?? this.entitiesKey;
-        this.entityExtractionChain = new LLMChain({
-            llm: this.llm,
-            prompt: fields.entityExtractionPrompt ?? ENTITY_EXTRACTION_PROMPT,
-        });
-        this.entitySummarizationChain = new LLMChain({
-            llm: this.llm,
-            prompt: fields.entitySummarizationPrompt ?? ENTITY_SUMMARIZATION_PROMPT,
-        });
-        this.entityStore = fields.entityStore ?? new InMemoryEntityStore();
-        this.entityCache = fields.entityCache ?? this.entityCache;
-        this.k = fields.k ?? this.k;
-    }
-    get memoryKeys() {
-        return [this.chatHistoryKey];
-    }
-    // Will always return list of memory variables.
-    get memoryVariables() {
-        return [this.entitiesKey, this.chatHistoryKey];
-    }
-    // Return history buffer.
-    /**
-     * Method to load memory variables and perform entity extraction.
-     * @param inputs Input values for the method.
-     * @returns Promise resolving to an object containing memory variables.
-     */
-    async loadMemoryVariables(inputs) {
-        const promptInputKey = this.inputKey ?? getPromptInputKey(inputs, this.memoryVariables);
-        const messages = await this.chatHistory.getMessages();
-        const serializedMessages = getBufferString(messages.slice(-this.k * 2), this.humanPrefix, this.aiPrefix);
-        const output = await this.entityExtractionChain.predict({
-            history: serializedMessages,
-            input: inputs[promptInputKey],
-        });
-        const entities = output.trim() === "NONE" ? [] : output.split(",").map((w) => w.trim());
-        const entitySummaries = {};
-        for (const entity of entities) {
-            entitySummaries[entity] = await this.entityStore.get(entity, "No current information known.");
-        }
-        this.entityCache = [...entities];
-        const buffer = this.returnMessages
-            ? messages.slice(-this.k * 2)
-            : serializedMessages;
-        return {
-            [this.chatHistoryKey]: buffer,
-            [this.entitiesKey]: entitySummaries,
-        };
-    }
-    // Save context from this conversation to buffer.
-    /**
-     * Method to save the context from a conversation to a buffer and perform
-     * entity summarization.
-     * @param inputs Input values for the method.
-     * @param outputs Output values from the method.
-     * @returns Promise resolving to void.
-     */
-    async saveContext(inputs, outputs) {
-        await super.saveContext(inputs, outputs);
-        const promptInputKey = this.inputKey ?? getPromptInputKey(inputs, this.memoryVariables);
-        const messages = await this.chatHistory.getMessages();
-        const serializedMessages = getBufferString(messages.slice(-this.k * 2), this.humanPrefix, this.aiPrefix);
-        const inputData = inputs[promptInputKey];
-        for (const entity of this.entityCache) {
-            const existingSummary = await this.entityStore.get(entity, "No current information known.");
-            const output = await this.entitySummarizationChain.predict({
-                summary: existingSummary,
-                entity,
-                history: serializedMessages,
-                input: inputData,
-            });
-            if (output.trim() !== "UNCHANGED") {
-                await this.entityStore.set(entity, output.trim());
-            }
-        }
-    }
-    // Clear memory contents.
-    /**
-     * Method to clear the memory contents.
-     * @returns Promise resolving to void.
-     */
-    async clear() {
-        await super.clear();
-        await this.entityStore.clear();
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/combined_memory.js
-
-/**
- * Class that manages and manipulates previous chat messages. It extends
- * from the BaseChatMemory class and implements the CombinedMemoryInput
- * interface.
- */
-class CombinedMemory extends (/* unused pure expression or super */ null && (BaseChatMemory)) {
-    constructor(fields) {
-        super({
-            chatHistory: fields?.chatHistory,
-            returnMessages: fields?.returnMessages ?? false,
-            inputKey: fields?.inputKey,
-            outputKey: fields?.outputKey,
-        });
-        Object.defineProperty(this, "humanPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "Human"
-        });
-        Object.defineProperty(this, "aiPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "AI"
-        });
-        Object.defineProperty(this, "memoryKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "history"
-        });
-        Object.defineProperty(this, "memories", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        this.memories = fields?.memories ?? this.memories;
-        this.humanPrefix = fields?.humanPrefix ?? this.humanPrefix;
-        this.aiPrefix = fields?.aiPrefix ?? this.aiPrefix;
-        this.memoryKey = fields?.memoryKey ?? this.memoryKey;
-        this.checkRepeatedMemoryVariable();
-        this.checkInputKey();
-    }
-    /**
-     * Checks for repeated memory variables across all memory objects. Throws
-     * an error if any are found.
-     */
-    checkRepeatedMemoryVariable() {
-        const allVariables = [];
-        for (const memory of this.memories) {
-            const overlap = allVariables.filter((x) => memory.memoryKeys.includes(x));
-            if (overlap.length > 0) {
-                throw new Error(`The same variables ${[
-                    ...overlap,
-                ]} are found in multiple memory objects, which is not allowed by CombinedMemory.`);
-            }
-            allVariables.push(...memory.memoryKeys);
-        }
-    }
-    /**
-     * Checks if input keys are set for all memory objects. Logs a warning if
-     * any are missing.
-     */
-    checkInputKey() {
-        for (const memory of this.memories) {
-            if (memory.chatHistory !== undefined &&
-                memory.inputKey === undefined) {
-                console.warn(`When using CombinedMemory, input keys should be set so the input is known. Was not set on ${memory}.`);
-            }
-        }
-    }
-    /**
-     * Loads memory variables from all memory objects.
-     * @param inputValues Input values to load memory variables from.
-     * @returns Promise that resolves with an object containing the loaded memory variables.
-     */
-    async loadMemoryVariables(inputValues) {
-        let memoryData = {};
-        for (const memory of this.memories) {
-            const data = await memory.loadMemoryVariables(inputValues);
-            memoryData = {
-                ...memoryData,
-                ...data,
-            };
-        }
-        return memoryData;
-    }
-    /**
-     * Saves the context to all memory objects.
-     * @param inputValues Input values to save.
-     * @param outputValues Output values to save.
-     * @returns Promise that resolves when the context has been saved to all memory objects.
-     */
-    async saveContext(inputValues, outputValues) {
-        for (const memory of this.memories) {
-            await memory.saveContext(inputValues, outputValues);
-        }
-    }
-    /**
-     * Clears all memory objects.
-     * @returns Promise that resolves when all memory objects have been cleared.
-     */
-    async clear() {
-        for (const memory of this.memories) {
-            if (typeof memory.clear === "function") {
-                await memory.clear();
-            }
-        }
-    }
-    get memoryKeys() {
-        const memoryKeys = [];
-        for (const memory of this.memories) {
-            memoryKeys.push(...memory.memoryKeys);
-        }
-        return memoryKeys;
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/summary_buffer.js
-
-
-/**
- * Class that extends BaseConversationSummaryMemory and implements
- * ConversationSummaryBufferMemoryInput. It manages the conversation
- * history in a LangChain application by maintaining a buffer of chat
- * messages and providing methods to load, save, prune, and clear the
- * memory.
- * @example
- * ```typescript
- * // Initialize the memory with a specific model and token limit
- * const memory = new ConversationSummaryBufferMemory({
- *   llm: new ChatOpenAI({ modelName: "gpt-3.5-turbo-instruct", temperature: 0 }),
- *   maxTokenLimit: 10,
- * });
- *
- * // Save conversation context to memory
- * await memory.saveContext({ input: "hi" }, { output: "whats up" });
- * await memory.saveContext({ input: "not much you" }, { output: "not much" });
- *
- * // Load the conversation history from memory
- * const history = await memory.loadMemoryVariables({});
- * console.log({ history });
- *
- * // Create a chat prompt using the conversation history
- * const chatPrompt = ChatPromptTemplate.fromMessages([
- *   SystemMessagePromptTemplate.fromTemplate(
- *     "The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.",
- *   ),
- *   new MessagesPlaceholder("history"),
- *   HumanMessagePromptTemplate.fromTemplate("{input}"),
- * ]);
- *
- * // Initialize the conversation chain with the model, memory, and prompt
- * const chain = new ConversationChain({
- *   llm: new ChatOpenAI({ temperature: 0.9, verbose: true }),
- *   memory: memory,
- *   prompt: chatPrompt,
- * });
- * ```
- */
-class ConversationSummaryBufferMemory extends (/* unused pure expression or super */ null && (BaseConversationSummaryMemory)) {
-    constructor(fields) {
-        super(fields);
-        Object.defineProperty(this, "movingSummaryBuffer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ""
-        });
-        Object.defineProperty(this, "maxTokenLimit", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: 2000
-        });
-        this.maxTokenLimit = fields?.maxTokenLimit ?? this.maxTokenLimit;
-    }
-    get memoryKeys() {
-        return [this.memoryKey];
-    }
-    /**
-     * Method that loads the chat messages from the memory and returns them as
-     * a string or as a list of messages, depending on the returnMessages
-     * property.
-     * @param _ InputValues object, not used in this method.
-     * @returns Promise that resolves with MemoryVariables object containing the loaded chat messages.
-     */
-    async loadMemoryVariables(_) {
-        let buffer = await this.chatHistory.getMessages();
-        if (this.movingSummaryBuffer) {
-            buffer = [
-                new this.summaryChatMessageClass(this.movingSummaryBuffer),
-                ...buffer,
-            ];
-        }
-        let finalBuffer;
-        if (this.returnMessages) {
-            finalBuffer = buffer;
-        }
-        else {
-            finalBuffer = getBufferString(buffer, this.humanPrefix, this.aiPrefix);
-        }
-        return { [this.memoryKey]: finalBuffer };
-    }
-    /**
-     * Method that saves the context of the conversation, including the input
-     * and output values, and prunes the memory if it exceeds the maximum
-     * token limit.
-     * @param inputValues InputValues object containing the input values of the conversation.
-     * @param outputValues OutputValues object containing the output values of the conversation.
-     * @returns Promise that resolves when the context is saved and the memory is pruned.
-     */
-    async saveContext(inputValues, outputValues) {
-        await super.saveContext(inputValues, outputValues);
-        await this.prune();
-    }
-    /**
-     * Method that prunes the memory if the total number of tokens in the
-     * buffer exceeds the maxTokenLimit. It removes messages from the
-     * beginning of the buffer until the total number of tokens is within the
-     * limit.
-     * @returns Promise that resolves when the memory is pruned.
-     */
-    async prune() {
-        // Prune buffer if it exceeds max token limit
-        let buffer = await this.chatHistory.getMessages();
-        if (this.movingSummaryBuffer) {
-            buffer = [
-                new this.summaryChatMessageClass(this.movingSummaryBuffer),
-                ...buffer,
-            ];
-        }
-        let currBufferLength = await this.llm.getNumTokens(getBufferString(buffer, this.humanPrefix, this.aiPrefix));
-        if (currBufferLength > this.maxTokenLimit) {
-            const prunedMemory = [];
-            while (currBufferLength > this.maxTokenLimit) {
-                const poppedMessage = buffer.shift();
-                if (poppedMessage) {
-                    prunedMemory.push(poppedMessage);
-                    currBufferLength = await this.llm.getNumTokens(getBufferString(buffer, this.humanPrefix, this.aiPrefix));
-                }
-            }
-            this.movingSummaryBuffer = await this.predictNewSummary(prunedMemory, this.movingSummaryBuffer);
-        }
-    }
-    /**
-     * Method that clears the memory and resets the movingSummaryBuffer.
-     * @returns Promise that resolves when the memory is cleared.
-     */
-    async clear() {
-        await super.clear();
-        this.movingSummaryBuffer = "";
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/buffer_token_memory.js
-
-
-/**
- * Class that represents a conversation chat memory with a token buffer.
- * It extends the `BaseChatMemory` class and implements the
- * `ConversationTokenBufferMemoryInput` interface.
- * @example
- * ```typescript
- * const memory = new ConversationTokenBufferMemory({
- *   llm: new ChatOpenAI({}),
- *   maxTokenLimit: 10,
- * });
- *
- * // Save conversation context
- * await memory.saveContext({ input: "hi" }, { output: "whats up" });
- * await memory.saveContext({ input: "not much you" }, { output: "not much" });
- *
- * // Load memory variables
- * const result = await memory.loadMemoryVariables({});
- * console.log(result);
- * ```
- */
-class ConversationTokenBufferMemory extends (/* unused pure expression or super */ null && (BaseChatMemory)) {
-    constructor(fields) {
-        super(fields);
-        Object.defineProperty(this, "humanPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "Human"
-        });
-        Object.defineProperty(this, "aiPrefix", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "AI"
-        });
-        Object.defineProperty(this, "memoryKey", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: "history"
-        });
-        Object.defineProperty(this, "maxTokenLimit", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: 2000
-        }); // Default max token limit of 2000 which can be overridden
-        Object.defineProperty(this, "llm", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        this.llm = fields.llm;
-        this.humanPrefix = fields?.humanPrefix ?? this.humanPrefix;
-        this.aiPrefix = fields?.aiPrefix ?? this.aiPrefix;
-        this.memoryKey = fields?.memoryKey ?? this.memoryKey;
-        this.maxTokenLimit = fields?.maxTokenLimit ?? this.maxTokenLimit;
-    }
-    get memoryKeys() {
-        return [this.memoryKey];
-    }
-    /**
-     * Loads the memory variables. It takes an `InputValues` object as a
-     * parameter and returns a `Promise` that resolves with a
-     * `MemoryVariables` object.
-     * @param _values `InputValues` object.
-     * @returns A `Promise` that resolves with a `MemoryVariables` object.
-     */
-    async loadMemoryVariables(_values) {
-        const messages = await this.chatHistory.getMessages();
-        if (this.returnMessages) {
-            const result = {
-                [this.memoryKey]: messages,
-            };
-            return result;
-        }
-        const result = {
-            [this.memoryKey]: getBufferString(messages, this.humanPrefix, this.aiPrefix),
-        };
-        return result;
-    }
-    /**
-     * Saves the context from this conversation to buffer. If the amount
-     * of tokens required to save the buffer exceeds MAX_TOKEN_LIMIT,
-     * prune it.
-     */
-    async saveContext(inputValues, outputValues) {
-        await super.saveContext(inputValues, outputValues);
-        // Prune buffer if it exceeds the max token limit set for this instance.
-        const buffer = await this.chatHistory.getMessages();
-        let currBufferLength = await this.llm.getNumTokens(getBufferString(buffer, this.humanPrefix, this.aiPrefix));
-        if (currBufferLength > this.maxTokenLimit) {
-            const prunedMemory = [];
-            while (currBufferLength > this.maxTokenLimit) {
-                prunedMemory.push(buffer.shift());
-                currBufferLength = await this.llm.getNumTokens(getBufferString(buffer, this.humanPrefix, this.aiPrefix));
-            }
-        }
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/langchain/dist/memory/index.js
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;// CONCATENATED MODULE: ./node_modules/langchain/memory.js
-
-;// CONCATENATED MODULE: ./node_modules/langchain/chat_models/openai.js
-
 ;// CONCATENATED MODULE: ./lib/bot.js
-
 
 
 
@@ -16810,7 +15538,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
 `;
             const chatPrompt = prompts/* ChatPromptTemplate.fromMessages */.ks.fromMessages([
                 ['system', systemMessage],
-                new prompts/* MessagesPlaceholder */.ax('history'),
                 ['human', '{input}']
             ]);
             this.model = new openai_ChatOpenAI({
@@ -16823,7 +15550,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
                 maxRetries: this.options.openaiRetries
             });
             this.api = new conversation_ConversationChain({
-                memory: new BufferMemory({ returnMessages: true, memoryKey: 'history' }),
                 prompt: chatPrompt,
                 llm: this.model
             });
@@ -17632,7 +16358,7 @@ __nccwpck_require__.a(module, async (__webpack_handle_async_dependencies__, __we
 __nccwpck_require__.r(__webpack_exports__);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _bot__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5517);
+/* harmony import */ var _bot__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(446);
 /* harmony import */ var _options__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(8870);
 /* harmony import */ var _prompts__WEBPACK_IMPORTED_MODULE_5__ = __nccwpck_require__(4272);
 /* harmony import */ var _review__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(2612);
@@ -65610,13 +64336,12 @@ class BasePromptTemplate extends _runnables_base_js__WEBPACK_IMPORTED_MODULE_0__
 "use strict";
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   "S": () => (/* binding */ BaseChatPromptTemplate),
-/* harmony export */   "ax": () => (/* binding */ MessagesPlaceholder),
 /* harmony export */   "gc": () => (/* binding */ AIMessagePromptTemplate),
 /* harmony export */   "kq": () => (/* binding */ HumanMessagePromptTemplate),
 /* harmony export */   "ks": () => (/* binding */ ChatPromptTemplate),
 /* harmony export */   "ov": () => (/* binding */ SystemMessagePromptTemplate)
 /* harmony export */ });
-/* unused harmony exports BaseMessagePromptTemplate, BaseMessageStringPromptTemplate, ChatMessagePromptTemplate */
+/* unused harmony exports BaseMessagePromptTemplate, MessagesPlaceholder, BaseMessageStringPromptTemplate, ChatMessagePromptTemplate */
 /* harmony import */ var _messages_index_js__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(526);
 /* harmony import */ var _prompt_values_js__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(437);
 /* harmony import */ var _runnables_base_js__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(3282);
@@ -65664,7 +64389,7 @@ class BaseMessagePromptTemplate extends _runnables_base_js__WEBPACK_IMPORTED_MOD
  * Class that represents a placeholder for messages in a chat prompt. It
  * extends the BaseMessagePromptTemplate.
  */
-class MessagesPlaceholder extends BaseMessagePromptTemplate {
+class MessagesPlaceholder extends (/* unused pure expression or super */ null && (BaseMessagePromptTemplate)) {
     static lc_name() {
         return "MessagesPlaceholder";
     }
@@ -65688,10 +64413,10 @@ class MessagesPlaceholder extends BaseMessagePromptTemplate {
     validateInputOrThrow(input, variableName) {
         let isInputBaseMessage = false;
         if (Array.isArray(input)) {
-            isInputBaseMessage = input.every((message) => (0,_messages_index_js__WEBPACK_IMPORTED_MODULE_0__/* .isBaseMessage */ .QW)(message));
+            isInputBaseMessage = input.every((message) => isBaseMessage(message));
         }
         else {
-            isInputBaseMessage = (0,_messages_index_js__WEBPACK_IMPORTED_MODULE_0__/* .isBaseMessage */ .QW)(input);
+            isInputBaseMessage = isBaseMessage(input);
         }
         if (!isInputBaseMessage) {
             const readableInput = typeof input === "string" ? input : JSON.stringify(input, null, 2);
@@ -71137,12 +69862,11 @@ __nccwpck_require__.d(__webpack_exports__, {
   "ks": () => (/* reexport */ chat/* ChatPromptTemplate */.ks),
   "P8": () => (/* reexport */ few_shot.FewShotPromptTemplate),
   "kq": () => (/* reexport */ chat/* HumanMessagePromptTemplate */.kq),
-  "ax": () => (/* reexport */ chat/* MessagesPlaceholder */.ax),
   "Pf": () => (/* reexport */ prompts_prompt.PromptTemplate),
   "ov": () => (/* reexport */ chat/* SystemMessagePromptTemplate */.ov)
 });
 
-// UNUSED EXPORTS: BaseChatPromptTemplate, BaseMessagePromptTemplate, BaseMessageStringPromptTemplate, BaseStringPromptTemplate, ChatMessagePromptTemplate, DEFAULT_FORMATTER_MAPPING, DEFAULT_PARSER_MAPPING, FewShotChatMessagePromptTemplate, PipelinePromptTemplate, checkValidTemplate, interpolateFString, parseFString, parseTemplate, renderTemplate
+// UNUSED EXPORTS: BaseChatPromptTemplate, BaseMessagePromptTemplate, BaseMessageStringPromptTemplate, BaseStringPromptTemplate, ChatMessagePromptTemplate, DEFAULT_FORMATTER_MAPPING, DEFAULT_PARSER_MAPPING, FewShotChatMessagePromptTemplate, MessagesPlaceholder, PipelinePromptTemplate, checkValidTemplate, interpolateFString, parseFString, parseTemplate, renderTemplate
 
 // EXTERNAL MODULE: ./node_modules/@langchain/core/dist/prompts/base.js
 var base = __nccwpck_require__(4200);
@@ -74032,7 +72756,6 @@ class VectorDBQAChain extends _base_js__WEBPACK_IMPORTED_MODULE_0__/* .BaseChain
 
 "use strict";
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
-/* harmony export */   "ax": () => (/* reexport safe */ _langchain_core_prompts__WEBPACK_IMPORTED_MODULE_0__.ax),
 /* harmony export */   "gc": () => (/* reexport safe */ _langchain_core_prompts__WEBPACK_IMPORTED_MODULE_0__.gc),
 /* harmony export */   "kq": () => (/* reexport safe */ _langchain_core_prompts__WEBPACK_IMPORTED_MODULE_0__.kq),
 /* harmony export */   "ks": () => (/* reexport safe */ _langchain_core_prompts__WEBPACK_IMPORTED_MODULE_0__.ks),
@@ -74069,12 +72792,11 @@ __nccwpck_require__.d(__webpack_exports__, {
   "gc": () => (/* reexport */ chat/* AIMessagePromptTemplate */.gc),
   "ks": () => (/* reexport */ chat/* ChatPromptTemplate */.ks),
   "kq": () => (/* reexport */ chat/* HumanMessagePromptTemplate */.kq),
-  "ax": () => (/* reexport */ chat/* MessagesPlaceholder */.ax),
   "Pf": () => (/* reexport */ prompts_prompt/* PromptTemplate */.P),
   "ov": () => (/* reexport */ chat/* SystemMessagePromptTemplate */.ov)
 });
 
-// UNUSED EXPORTS: BaseChatPromptTemplate, BaseExampleSelector, BasePromptSelector, BasePromptTemplate, BaseStringPromptTemplate, ChatMessagePromptTemplate, ConditionalPromptSelector, FewShotChatMessagePromptTemplate, FewShotPromptTemplate, LengthBasedExampleSelector, PipelinePromptTemplate, SemanticSimilarityExampleSelector, StringPromptValue, checkValidTemplate, isChatModel, isLLM, parseTemplate, renderTemplate
+// UNUSED EXPORTS: BaseChatPromptTemplate, BaseExampleSelector, BasePromptSelector, BasePromptTemplate, BaseStringPromptTemplate, ChatMessagePromptTemplate, ConditionalPromptSelector, FewShotChatMessagePromptTemplate, FewShotPromptTemplate, LengthBasedExampleSelector, MessagesPlaceholder, PipelinePromptTemplate, SemanticSimilarityExampleSelector, StringPromptValue, checkValidTemplate, isChatModel, isLLM, parseTemplate, renderTemplate
 
 // EXTERNAL MODULE: ./node_modules/langchain/dist/prompts/base.js
 var base = __nccwpck_require__(5411);

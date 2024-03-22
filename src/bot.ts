@@ -1,12 +1,11 @@
-import './fetch-polyfill'
+import './fetch-polyfill';
 
-import {info, setFailed, warning} from '@actions/core'
-import {ConversationChain} from "langchain/chains";
-import {ChatPromptTemplate, MessagesPlaceholder} from 'langchain/prompts'
-import {OpenAIOptions, Options} from './options'
-import {BufferMemory} from "langchain/memory";
-import {ChainValues} from 'langchain/schema'
-import {ChatOpenAI} from "langchain/chat_models/openai";
+import { info, setFailed, warning } from '@actions/core';
+import { ConversationChain } from "langchain/chains";
+import { ChatOpenAI } from "langchain/chat_models/openai";
+import { ChatPromptTemplate } from 'langchain/prompts';
+import { ChainValues } from 'langchain/schema';
+import { OpenAIOptions, Options } from './options';
 
 // define type to save parentMessageId and conversationId
 export interface Ids {
@@ -33,7 +32,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
 `
       const chatPrompt = ChatPromptTemplate.fromMessages([
         ['system', systemMessage],
-        new MessagesPlaceholder('history'),
         ['human', '{input}']
       ])
 
@@ -48,7 +46,6 @@ IMPORTANT: Entire response must be in the language with ISO code: ${options.lang
       })
 
       this.api = new ConversationChain({
-        memory: new BufferMemory({returnMessages: true, memoryKey: 'history'}),
         prompt: chatPrompt,
         llm: this.model
       })
